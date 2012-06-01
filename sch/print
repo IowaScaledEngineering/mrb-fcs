@@ -1,0 +1,6 @@
+#!/bin/bash
+
+gschem -p -o mrb-fcs.ps -s /usr/share/gEDA/scheme/print.scm mrb-fcs.sch 
+ps2pdf mrb-fcs.ps
+rm mrb-fcs.ps
+acroread mrb-fcs.pdf
