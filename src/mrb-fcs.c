@@ -38,6 +38,17 @@ uint8_t output_status=0;
 
 uint8_t displayCharacters[4] = {0,1,2,3};
 
+// I screwed up the layout...
+//  Digit 0 is actually driven by bit 1, digit 1 by bit 0, digit 2 by bit 3, and digit 3 by bit 2
+
+const uint8_t DIGIT_DRIVE [] =
+{
+	0xFD, // Digit 0
+	0xFE, // Digit 1
+	0xF7, // Digit 2
+	0xFB  // Digit 3
+};
+
 const uint8_t SEGMENTS[] = 
 {
 	0b00111111,   // 0
@@ -78,7 +89,6 @@ const uint8_t SEGMENTS[] =
 	0b01110110,   // 'z' // Unusable
 	0b00000000,   // Blank
 	0b01000000,   // Dash
-
 };
 
 // ******** Start 100 Hz Timer 
@@ -89,38 +99,48 @@ const uint8_t SEGMENTS[] =
 // If you do remove it, be sure to yank the interrupt handler and ticks/secs as well
 // and the call to this function in the main function
 
-uint16_t ticks=0;
-uint8_t secs=0;
+uint8_t ticks=0;
+uint8_t decisecs=0;
+uint8_t colon_ticks=0;
 
 void initialize400HzTimer(void)
 {
-	// Set up timer 1 for 400Hz interrupts
+	// Set up timer 1 for 100Hz interrupts
 	TCNT0 = 0;
 	OCR0A = 0xC2;
 	ticks = 0;
-	secs = 0;
+	decisecs = 0;
 	TCCR0A = _BV(WGM01);
 	TCCR0B = _BV(CS02); // | _BV(CS00);
-	TIMSK |= _BV(OCIE0A);
+	TIMSK0 |= _BV(OCIE0A);
 }
 
 ISR(TIMER0_COMPA_vect)
 {
-	uint8_t digit = (ticks%4);
+	uint8_t digit = ticks % 4;
+	uint8_t segments = SEGMENTS[displayCharacters[digit]];
+	uint8_t anodes = DIGIT_DRIVE[digit];
 	// Shut down segment drives
-	PORTB = 0xFF;
-	// Switch digit
-	PORTD = (PORTD | (_BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6))) & ~(8<<digit);
-	PORTB = SEGMENTS[displayCharacters[3-digit]];
+	PORTB &= ~(0x3F);
+	PORTD &= ~(0xC0);
 
-	if (++ticks >= 400)
+	// Switch digit
+	PORTC = (PORTC | 0x0F) & anodes;
+	PORTB |= segments & 0x3F;
+	PORTD |= segments & 0xC0;
+	
+	if (++colon_ticks > 200)
+	{
+		colon_ticks = 0;
+		PORTD ^= _BV(PD3);
+	}
+	
+	if (++ticks >= 40)
 	{
 		ticks = 0;
-		secs++;
+		decisecs++;
 	}
 }
-#define UINT16_HIGH_BYTE(a)  ((a)>>8)
-#define UINT16_LOW_BYTE(a)  ((a) & 0xFF)
 
 void PktHandler(void)
 {
@@ -202,7 +222,7 @@ void PktHandler(void)
 
 	time_source_addr = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
 
-	if ((mrbus_rx_buffer[MRBUS_PKT_SRC] == time_source_addr) && 'T' == )
+	if ((mrbus_rx_buffer[MRBUS_PKT_SRC] == time_source_addr) && 'T' == mrbus_rx_buffer[MRBUS_PKT_TYPE])
 	{
 
 
@@ -233,7 +253,7 @@ void init(void)
 
 int main(void)
 {
-	uint8_t changed=0, old_output_status = 0;
+	uint8_t changed=0;
 	// Application initialization
 	init();
 
@@ -241,12 +261,13 @@ int main(void)
 	// remove it if you don't use it.
 	initialize400HzTimer();
 
-	PORTB = 0xFF;
-	PORTD |= _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
+	PORTB &= ~(0x3F);
+	PORTD &= ~(0xC0);
+	PORTC |= 0x0F;
 
-	DDRB = 0x7F;
-	DDRD = _BV(PD3) | _BV(PD4) | _BV(PD5) | _BV(PD6);
-
+	DDRB |= 0x3F;
+	DDRD |= 0xC0;
+	DDRC |= 0x0F;
 	
 	// Initialize MRBus core
 	mrbusInit();
@@ -260,9 +281,9 @@ int main(void)
 			PktHandler();
 			
 		/* Events that happen every second */
-		if (secs >= 2)
+		if (decisecs >= 20)
 		{
-			secs = 0;
+			decisecs = 0;
 			changed = 1;		
 		}
 

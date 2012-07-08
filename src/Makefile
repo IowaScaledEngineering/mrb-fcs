@@ -25,21 +25,26 @@
 #    
 #*************************************************************************
 
-DEVICE  = attiny2313
-F_CPU   = 20000000	# Hz
-FUSE_L  = 0xCE
-FUSE_H  = 0x99
-FUSE_E  = 0xFF
-AVRDUDE = avrdude -c usbtiny -p $(DEVICE) 
-
 BASE_NAME = mrb-fcs
+
+# ATmega48P 20MHz @ 5.0V
+DEVICE  = atmega48
+F_CPU   = 20000000  # Hz
+FUSE_L  = 0xE7
+FUSE_H  = 0xD4
+FUSE_E  = 0x00
+
+DEFINES = -DMRBUS
 INCS = ../../mrbus/src/mrbus.h ../../mrbus/src/mrbus-avr.h
 SRCS = $(BASE_NAME).c ../../mrbus/src/mrbus-avr.c ../../mrbus/src/mrbus-crc.c
+
 OBJS = ${SRCS:.c=.o}
 INCLUDES = -I. -I../../mrbus/src
 CFLAGS  = $(INCLUDES) -Wall -Os
 
-COMPILE = avr-gcc -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE)
+AVRDUDE = avrdude -c usbtiny -p $(DEVICE) 
+
+COMPILE = avr-gcc $(DEFINES) -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE)
 
 # -E -dM options preprocess only and output results of #define
 #COMPILE = avr-gcc -Wall -Os -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE) -E -dM
