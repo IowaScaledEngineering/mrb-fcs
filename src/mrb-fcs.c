@@ -36,6 +36,51 @@ extern uint8_t mrbus_activity;
 uint8_t mrbus_dev_addr = 0x11;
 uint8_t output_status=0;
 
+uint8_t scaleFactor = 1;
+uint8_t flags = 0;
+typedef struct
+{
+	uint8_t seconds;
+	uint8_t minutes;
+	uint8_t hours;
+	uint8_t dayOfWeek;
+	uint8_t day;
+	uint8_t month;
+	uint16_t year;
+} TimeData;
+
+TimeData realTime;
+TimeData fastTime;
+
+void initTimeData(TimeData* t)
+{
+	t->seconds = t->minutes = t->hours = 0;
+	t->dayOfWeek = 0;
+	t->year = 2012;
+	t->month = t->day = 1;
+}
+
+void incrementTime(TimeData* t, uint8_t incSeconds)
+{
+	uint16_t i = t->seconds + incSeconds;
+
+	while(i >= 60)
+	{
+		t->minutes++;
+		i -= 60;
+	}
+	t->seconds = (uint8_t)i;
+	
+	while(t->minutes >= 60)
+	{
+		t->hours++;
+		t->minutes -= 60;
+	}
+	
+	if (t->hours >= 24)
+		t->hours %= 24;
+}
+
 uint8_t displayCharacters[4] = {0,1,2,3};
 
 // I screwed up the layout...
@@ -224,8 +269,15 @@ void PktHandler(void)
 
 	if ((mrbus_rx_buffer[MRBUS_PKT_SRC] == time_source_addr) && 'T' == mrbus_rx_buffer[MRBUS_PKT_TYPE])
 	{
-
-
+		// A-ha!  It's a time reference packet!
+		realTime.hours = mrbus_rx_buffer[6];
+		realTime.minutes = mrbus_rx_buffer[7];
+		realTime.seconds = mrbus_rx_buffer[8];
+		fastTime.hours =  mrbus_rx_buffer[10];
+		fastTime.minutes =  mrbus_rx_buffer[11];
+		fastTime.seconds = mrbus_rx_buffer[12];
+		scaleFactor = mrbus_rx_buffer[13];
+		flags = mrbus_rx_buffer[9];
 	}
 
 
@@ -253,7 +305,7 @@ void init(void)
 
 int main(void)
 {
-	uint8_t changed=0;
+	uint8_t changed=0, i;
 	// Application initialization
 	init();
 
@@ -287,18 +339,52 @@ int main(void)
 			changed = 1;		
 		}
 
-		/* If we need to send a packet and we're not already busy... */
-		if ((changed != 0) && !(mrbus_state & (MRBUS_TX_BUF_ACTIVE | MRBUS_TX_PKT_READY)))
+
+		if (flags & 0x01) // Fast Mode
 		{
-			mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
-			mrbus_tx_buffer[MRBUS_PKT_DEST] = 0xFF;
-			mrbus_tx_buffer[MRBUS_PKT_LEN] = 7;			
-			mrbus_tx_buffer[5] = 'S';
-			mrbus_tx_buffer[6] = output_status;
-			mrbus_state |= MRBUS_TX_PKT_READY;
-			changed = 0;
-		}
+			if (flags & 0x02) // Hold Mode
+			{
+				displayCharacters[0] = 17;
+				displayCharacters[1] = 24;
+				displayCharacters[2] = 1;
+				displayCharacters[3] = 13;
+			} else {
+				displayCharacters[3] = fastTime.minutes % 10;
+				displayCharacters[2] = (fastTime.minutes / 10) % 10;
+
+				i = (fastTime.hours / 10) % 10;
+				if (flags & 0x08)
+				{
+					// If 12 hour mode
+					// FIXME
+					displayCharacters[1] = fastTime.hours % 10;
+					displayCharacters[0] = i;
+				} else {
+					// 24 hour mode
+					displayCharacters[1] = fastTime.hours % 10;
+					displayCharacters[0] = i;
+				}
+			}
+
+		} else {
+			// Regular, non-fast time mode
+			displayCharacters[3] = realTime.minutes % 10;
+			displayCharacters[2] = (realTime.minutes / 10) % 10;
+
+			i = (realTime.hours / 10) % 10;
+			if (flags & 0x04)
+			{
+				// If 12 hour mode
+				// FIXME
+				displayCharacters[1] = realTime.hours % 10;
+				displayCharacters[0] = i;
+			} else {
+				// 24 hour mode
+				displayCharacters[1] = realTime.hours % 10;
+				displayCharacters[0] = i;
+			}
 		
+		}
 
 		// If we have a packet to be transmitted, try to send it here
 		while(mrbus_state & MRBUS_TX_PKT_READY)
