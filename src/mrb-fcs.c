@@ -94,6 +94,7 @@ const uint8_t DIGIT_DRIVE [] =
 	0xFB  // Digit 3
 };
 
+
 const uint8_t SEGMENTS[] = 
 {
 	0b00111111,   // 0
@@ -133,7 +134,7 @@ const uint8_t SEGMENTS[] =
 	0b01101110,   // 'y'
 	0b01110110,   // 'z' // Unusable
 	0b00000000,   // Blank
-	0b01000000,   // Dash
+	0b01000000    // Dash
 };
 
 // ******** Start 100 Hz Timer 
@@ -147,7 +148,9 @@ const uint8_t SEGMENTS[] =
 uint8_t ticks=0;
 uint8_t decisecs=0;
 uint8_t colon_ticks=0;
-
+volatile uint16_t fastDecisecs=0;
+uint8_t maxDeadReckoningTime = 50;
+uint8_t deadReckoningTime = 50;
 void initialize400HzTimer(void)
 {
 	// Set up timer 1 for 100Hz interrupts
@@ -163,7 +166,7 @@ void initialize400HzTimer(void)
 ISR(TIMER0_COMPA_vect)
 {
 	uint8_t digit = ticks % 4;
-	uint8_t segments = SEGMENTS[displayCharacters[digit]];
+	uint8_t segments = SEGMENTS[(0 == deadReckoningTime)?37:displayCharacters[digit]];
 	uint8_t anodes = DIGIT_DRIVE[digit];
 	// Shut down segment drives
 	PORTB &= ~(0x3F);
@@ -184,7 +187,14 @@ ISR(TIMER0_COMPA_vect)
 	{
 		ticks = 0;
 		decisecs++;
+		if (deadReckoningTime)
+			deadReckoningTime--;
+		if (0x01 == (flags & (0x01 | 0x08)))
+			fastDecisecs += scaleFactor;
 	}
+
+
+
 }
 
 void PktHandler(void)
@@ -278,6 +288,10 @@ void PktHandler(void)
 		fastTime.seconds = mrbus_rx_buffer[12];
 		scaleFactor = mrbus_rx_buffer[13];
 		flags = mrbus_rx_buffer[9];
+		
+		// If we got a packet, there's no dead reckoning time anymore
+		fastDecisecs = 0;
+		deadReckoningTime = maxDeadReckoningTime;
 	}
 
 
@@ -300,6 +314,7 @@ void init(void)
 {
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
+	fastDecisecs = 0;	
 }
 
 
@@ -385,6 +400,14 @@ int main(void)
 			}
 		
 		}
+
+		if((flags & 0x01) && !(flags & 0x08) && fastDecisecs >= 10)
+		{
+			uint8_t fastTimeSecs = fastDecisecs / 10;
+			incrementTime(&fastTime, fastTimeSecs);
+			fastDecisecs -= fastTimeSecs * 10;
+		}
+		
 
 		// If we have a packet to be transmitted, try to send it here
 		while(mrbus_state & MRBUS_TX_PKT_READY)
