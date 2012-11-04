@@ -1,5 +1,5 @@
 /*************************************************************************
-Title:    MRBus 4-Channel Block Detector, Mark II
+Title:    MRBus Fast Clock Slave (Wired & Wireless)
 Authors:  Nathan D. Holmes <maverick@drgw.net>
 File:     $Id: $
 License:  GNU General Public License v3
@@ -21,9 +21,25 @@ LICENSE:
 
 #include <stdlib.h>
 #include <avr/io.h>
+#include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
 #include <util/delay.h>
+
+
+#ifdef MRBEE
+// If wireless, redefine the common variables and functions
+#include "mrbee.h"
+#define mrbus_rx_buffer mrbee_rx_buffer
+#define mrbus_tx_buffer mrbee_tx_buffer
+#define mrbus_state mrbee_state
+#define mrbux_rx_buffer mrbee_rx_buffer
+#define mrbus_tx_buffer mrbee_tx_buffer
+#define mrbus_state mrbee_state
+#define mrbusInit mrbeeInit
+#define mrbusPacketTransmit mrbeePacketTransmit
+#endif
+
 #include "mrbus.h"
 
 extern uint8_t mrbus_rx_buffer[MRBUS_BUFFER_SIZE];
@@ -32,12 +48,14 @@ extern uint8_t mrbus_state;
 extern uint8_t mrbus_activity;
 
 #define MRBUS_CLOCK_SOURCE_ADDRESS  0x10
+#define MRBUS_MAX_DEAD_RECKONING    0x11
 
 uint8_t mrbus_dev_addr = 0x11;
 uint8_t output_status=0;
 
 uint8_t scaleFactor = 1;
 uint8_t flags = 0;
+
 typedef struct
 {
 	uint8_t seconds;
@@ -82,6 +100,7 @@ void incrementTime(TimeData* t, uint8_t incSeconds)
 }
 
 uint8_t displayCharacters[4] = {0,1,2,3};
+uint8_t displayDecimals = 0;
 
 // I screwed up the layout...
 //  Digit 0 is actually driven by bit 1, digit 1 by bit 0, digit 2 by bit 3, and digit 3 by bit 2
@@ -137,6 +156,25 @@ const uint8_t SEGMENTS[] =
 	0b01000000    // Dash
 };
 
+#define LCD_CHAR_0     0
+#define LCD_CHAR_1     1
+#define LCD_CHAR_2     2
+#define LCD_CHAR_3     3
+#define LCD_CHAR_4     4
+#define LCD_CHAR_5     5
+#define LCD_CHAR_6     6
+#define LCD_CHAR_7     7
+#define LCD_CHAR_8     8
+#define LCD_CHAR_9     9
+#define LCD_CHAR_H     17
+#define LCD_CHAR_O     24
+#define LCD_CHAR_L     21
+#define LCD_CHAR_D     13
+#define LED_CHAR_BLANK 36
+#define LED_CHAR_DASH  37
+
+#define DECIMAL_PM_INDICATOR 0x08
+
 // ******** Start 100 Hz Timer 
 
 // Initialize a 100Hz timer for use in triggering events.
@@ -145,12 +183,15 @@ const uint8_t SEGMENTS[] =
 // If you do remove it, be sure to yank the interrupt handler and ticks/secs as well
 // and the call to this function in the main function
 
+
 uint8_t ticks=0;
 uint8_t decisecs=0;
 uint8_t colon_ticks=0;
 volatile uint16_t fastDecisecs=0;
 uint8_t maxDeadReckoningTime = 50;
 uint8_t deadReckoningTime = 50;
+uint8_t timeSourceAddress = 0xFF;
+
 void initialize400HzTimer(void)
 {
 	// Set up timer 1 for 100Hz interrupts
@@ -166,16 +207,21 @@ void initialize400HzTimer(void)
 ISR(TIMER0_COMPA_vect)
 {
 	uint8_t digit = ticks % 4;
-	uint8_t segments = SEGMENTS[(0 == deadReckoningTime)?37:displayCharacters[digit]];
+	uint8_t segments = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[digit]];
 	uint8_t anodes = DIGIT_DRIVE[digit];
 	// Shut down segment drives
 	PORTB &= ~(0x3F);
 	PORTD &= ~(0xC0);
 
+	if (displayDecimals & (1<<digit))
+		segments |= 0x80;
+
 	// Switch digit
 	PORTC = (PORTC | 0x0F) & anodes;
 	PORTB |= segments & 0x3F;
 	PORTD |= segments & 0xC0;
+	
+	
 	
 	if (++colon_ticks > 200)
 	{
@@ -200,7 +246,7 @@ ISR(TIMER0_COMPA_vect)
 void PktHandler(void)
 {
 	uint16_t crc = 0;
-	uint8_t i, time_source_addr=0;
+	uint8_t i;
 
 	//*************** PACKET FILTER ***************
 	// Loopback Test - did we send it?  If so, we probably want to ignore it
@@ -256,8 +302,22 @@ void PktHandler(void)
 		eeprom_write_byte((uint8_t*)(uint16_t)mrbus_rx_buffer[6], mrbus_rx_buffer[7]);
 		mrbus_tx_buffer[6] = mrbus_rx_buffer[6];
 		mrbus_tx_buffer[7] = mrbus_rx_buffer[7];
-		if (MRBUS_EE_DEVICE_ADDR == mrbus_rx_buffer[6])
-			mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
+		
+		switch(mrbus_rx_buffer[6])
+		{
+			case MRBUS_EE_DEVICE_ADDR:
+				mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
+				break;
+
+			case MRBUS_CLOCK_SOURCE_ADDRESS:
+				timeSourceAddress = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
+				break;
+				
+			case MRBUS_MAX_DEAD_RECKONING:
+				deadReckoningTime = maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);
+				break;
+		}
+		
 		mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
 		mrbus_state |= MRBUS_TX_PKT_READY;
 		goto PktIgnore;
@@ -274,21 +334,45 @@ void PktHandler(void)
 		mrbus_state |= MRBUS_TX_PKT_READY;
 		goto PktIgnore;
 	}
-
-	time_source_addr = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
-
-	if ((mrbus_rx_buffer[MRBUS_PKT_SRC] == time_source_addr) && 'T' == mrbus_rx_buffer[MRBUS_PKT_TYPE])
+	else if ('V' == mrbus_rx_buffer[MRBUS_PKT_TYPE])
+    {
+        // Version
+        mrbus_tx_buffer[MRBUS_PKT_DEST] = mrbus_rx_buffer[MRBUS_PKT_SRC];
+		mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
+        mrbus_tx_buffer[MRBUS_PKT_LEN] = 14;
+        mrbus_tx_buffer[MRBUS_PKT_TYPE] = 'v';
+#ifdef MRBEE
+        mrbus_tx_buffer[6]  = MRBUS_VERSION_WIRELESS;
+#else
+        mrbus_tx_buffer[6]  = MRBUS_VERSION_WIRED;
+#endif
+        mrbus_tx_buffer[7]  = SWREV; // Software Revision
+        mrbus_tx_buffer[8]  = SWREV; // Software Revision
+        mrbus_tx_buffer[9]  = SWREV; // Software Revision
+        mrbus_tx_buffer[10]  = HWREV_MAJOR; // Hardware Major Revision
+        mrbus_tx_buffer[11]  = HWREV_MINOR; // Hardware Minor Revision
+        mrbus_tx_buffer[12] = 'T';
+        mrbus_tx_buffer[13] = 'H';
+        mrbus_state |= MRBUS_TX_PKT_READY;
+        goto PktIgnore;
+    }
+	else if ('T' == mrbus_rx_buffer[MRBUS_PKT_TYPE] &&
+		((0xFF == timeSourceAddress) || (mrbus_rx_buffer[MRBUS_PKT_SRC] == timeSourceAddress)) )
 	{
-		// A-ha!  It's a time reference packet!
+		// It's a time packet from our time reference source
 		realTime.hours = mrbus_rx_buffer[6];
 		realTime.minutes = mrbus_rx_buffer[7];
 		realTime.seconds = mrbus_rx_buffer[8];
-		fastTime.hours =  mrbus_rx_buffer[10];
-		fastTime.minutes =  mrbus_rx_buffer[11];
-		fastTime.seconds = mrbus_rx_buffer[12];
-		scaleFactor = mrbus_rx_buffer[13];
 		flags = mrbus_rx_buffer[9];
-		
+		// Time source packets aren't required to have a fast section
+		// Doesn't really make sense outside model railroading applications, so...
+		if (mrbus_rx_buffer[MRBUS_PKT_LEN] >= 14)
+		{
+			fastTime.hours =  mrbus_rx_buffer[10];
+			fastTime.minutes =  mrbus_rx_buffer[11];
+			fastTime.seconds = mrbus_rx_buffer[12];
+			scaleFactor = mrbus_rx_buffer[13];
+		}		
 		// If we got a packet, there's no dead reckoning time anymore
 		fastDecisecs = 0;
 		deadReckoningTime = maxDeadReckoningTime;
@@ -312,11 +396,72 @@ PktIgnore:
 
 void init(void)
 {
+	// Kill watchdog
+    MCUSR = 0;
+#ifdef ENABLE_WATCHDOG
+	// If you don't want the watchdog to do system reset, remove this chunk of code
+	wdt_reset();
+	WDTCSR |= _BV(WDE) | _BV(WDCE);
+	WDTCSR = _BV(WDE) | _BV(WDP2) | _BV(WDP1); // Set the WDT to system reset and 1s timeout
+	wdt_reset();
+#else
+	wdt_reset();
+	wdt_disable();
+#endif
+
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
+	timeSourceAddress = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
+	deadReckoningTime = maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);	
+	
 	fastDecisecs = 0;	
 }
 
+void displayTime(TimeData* time, uint8_t ampm)
+{
+	uint8_t i=0;
+	// Regular, non-fast time mode
+	displayCharacters[3] = time->minutes % 10;
+	displayCharacters[2] = (time->minutes / 10) % 10;
+
+	if (ampm)
+	{
+		// If 12 hour mode
+		if (time->hours == 0)
+		{
+			displayCharacters[0] = 1;
+			displayCharacters[1] = 2;
+		}
+		else 
+		{
+			uint8_t hrs = time->hours;
+			if (hrs > 12)
+				hrs -= 12;
+			
+			i = (hrs / 10) % 10;
+			displayCharacters[0] = (0==i)?LED_CHAR_BLANK:i;
+			displayCharacters[1] = hrs % 10;	
+		}
+
+		if (time->hours >= 12)
+			displayDecimals |= DECIMAL_PM_INDICATOR;
+		else
+			displayDecimals &= ~(DECIMAL_PM_INDICATOR);
+
+
+	} else {
+		// 24 hour mode
+		i = (time->hours / 10) % 10;
+		displayCharacters[1] = time->hours % 10;
+		displayCharacters[0] = i;
+		displayDecimals &= ~(DECIMAL_PM_INDICATOR);
+	}
+}
+
+#define TIME_FLAGS_DISP_FAST       0x01
+#define TIME_FLAGS_DISP_FAST_HOLD  0x02
+#define TIME_FLAGS_DISP_REAL_AMPM  0x04
+#define TIME_FLAGS_DISP_FAST_AMPM  0x08
 
 int main(void)
 {
@@ -343,63 +488,35 @@ int main(void)
 
 	while (1)
 	{
+		wdt_reset();
+
+#ifdef MRBEE
+		mrbeePoll();
+#endif
+
 		// Handle any packets that may have come in
 		if (mrbus_state & MRBUS_RX_PKT_READY)
 			PktHandler();
 			
 		/* Events that happen every second */
-		if (decisecs >= 20)
+		if (decisecs >= 10)
 		{
 			decisecs = 0;
 			changed = 1;		
 		}
 
-
-		if (flags & 0x01) // Fast Mode
+		if ((TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD) == (flags & (TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD)) )  // Hold state
 		{
-			if (flags & 0x02) // Hold Mode
-			{
-				displayCharacters[0] = 17;
-				displayCharacters[1] = 24;
-				displayCharacters[2] = 1;
-				displayCharacters[3] = 13;
-			} else {
-				displayCharacters[3] = fastTime.minutes % 10;
-				displayCharacters[2] = (fastTime.minutes / 10) % 10;
-
-				i = (fastTime.hours / 10) % 10;
-				if (flags & 0x08)
-				{
-					// If 12 hour mode
-					// FIXME
-					displayCharacters[1] = fastTime.hours % 10;
-					displayCharacters[0] = i;
-				} else {
-					// 24 hour mode
-					displayCharacters[1] = fastTime.hours % 10;
-					displayCharacters[0] = i;
-				}
-			}
-
-		} else {
-			// Regular, non-fast time mode
-			displayCharacters[3] = realTime.minutes % 10;
-			displayCharacters[2] = (realTime.minutes / 10) % 10;
-
-			i = (realTime.hours / 10) % 10;
-			if (flags & 0x04)
-			{
-				// If 12 hour mode
-				// FIXME
-				displayCharacters[1] = realTime.hours % 10;
-				displayCharacters[0] = i;
-			} else {
-				// 24 hour mode
-				displayCharacters[1] = realTime.hours % 10;
-				displayCharacters[0] = i;
-			}
-		
+			displayCharacters[0] = LCD_CHAR_H;
+			displayCharacters[1] = LCD_CHAR_O;
+			displayCharacters[2] = LCD_CHAR_1;
+			displayCharacters[3] = LCD_CHAR_D;
+			displayDecimals &= ~(DECIMAL_PM_INDICATOR);
 		}
+		else if (flags & TIME_FLAGS_DISP_FAST)
+			displayTime(&fastTime, flags & TIME_FLAGS_DISP_FAST_AMPM);
+		else
+			displayTime(&realTime, flags & TIME_FLAGS_DISP_REAL_AMPM);
 
 		if((flags & 0x01) && !(flags & 0x08) && fastDecisecs >= 10)
 		{
@@ -409,25 +526,42 @@ int main(void)
 		}
 		
 
+		if (changed && !(mrbus_state & MRBUS_TX_PKT_READY))
+		{
+			mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
+			mrbus_tx_buffer[MRBUS_PKT_DEST] = 0xFF;
+			mrbus_tx_buffer[MRBUS_PKT_LEN] = 7;
+			mrbus_tx_buffer[5] = 'S';
+			mrbus_tx_buffer[6] = 0;  // Status byte.  Lower three bits are sensor type, 000 = DHT11/DHT22/RHT03
+			changed = 0;
+			mrbus_state |= MRBUS_TX_PKT_READY;
+		}
+
 		// If we have a packet to be transmitted, try to send it here
 		while(mrbus_state & MRBUS_TX_PKT_READY)
 		{
-			uint8_t bus_countdown;
+			wdt_reset();
 
 			// Even while we're sitting here trying to transmit, keep handling
 			// any packets we're receiving so that we keep up with the current state of the
 			// bus.  Obviously things that request a response cannot go, since the transmit
 			// buffer is full.
+#ifdef MRBEE
+			mrbeePoll();
+#endif			
+	
 			if (mrbus_state & MRBUS_RX_PKT_READY)
 				PktHandler();
 
-
-			if (0 == mrbusPacketTransmit())
+			// A slight modification from normal - since slave clocks don't really need an address
+			// this will skip over transmitting if we don't have a source address
+			if (0xFF == mrbus_dev_addr || 0 == mrbusPacketTransmit())
 			{
 				mrbus_state &= ~(MRBUS_TX_PKT_READY);
 				break;
 			}
 
+#ifndef MRBEE
 			// If we're here, we failed to start transmission due to somebody else transmitting
 			// Given that our transmit buffer is full, priority one should be getting that data onto
 			// the bus so we can start using our tx buffer again.  So we stay in the while loop, trying
@@ -437,14 +571,17 @@ int main(void)
 			// Because MRBus has a minimum packet size of 6 bytes @ 57.6kbps,
 			// need to check roughly every millisecond to see if we have a new packet
 			// so that we don't miss things we're receiving while waiting to transmit
-			bus_countdown = 20;
-			while (bus_countdown-- > 0 && MRBUS_ACTIVITY_RX_COMPLETE != mrbus_activity)
 			{
-				//clrwdt();
-				_delay_ms(1);
-				if (mrbus_state & MRBUS_RX_PKT_READY) 
-					PktHandler();
+				uint8_t bus_countdown = 20;
+				while (bus_countdown-- > 0 && MRBUS_ACTIVITY_RX_COMPLETE != mrbus_activity)
+				{
+					//clrwdt();
+					_delay_ms(1);
+					if (mrbus_state & MRBUS_RX_PKT_READY) 
+						PktHandler();
+				}
 			}
+#endif
 		}
 	}
 }
