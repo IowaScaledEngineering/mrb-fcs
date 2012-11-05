@@ -238,9 +238,24 @@ ISR(TIMER0_COMPA_vect)
 		if (0x01 == (flags & (0x01 | 0x08)))
 			fastDecisecs += scaleFactor;
 	}
+}
 
+volatile uint16_t busVoltageAccum=0;
+volatile uint16_t busVoltage=0;
+volatile uint8_t busVoltageCount=0;
 
-
+ISR(ADC_vect)
+{
+	busVoltageAccum += ADC;
+	if (++busVoltageCount >= 64)
+	{
+		busVoltageAccum = busVoltageAccum / 64;
+        //At this point, we're at (Vbus/3) / 5 * 1024
+        //So multiply by 150, divide by 1024, or multiply by 75 and divide by 512
+        busVoltage = ((uint32_t)busVoltageAccum * 75) / 512;
+		busVoltageAccum = 0;
+		busVoltageCount = 0;
+	}
 }
 
 void PktHandler(void)
@@ -415,6 +430,17 @@ void init(void)
 	deadReckoningTime = maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);	
 	
 	fastDecisecs = 0;	
+	
+	// Setup ADC
+	ADMUX  = 0x46;  // AVCC reference; ADC6 input
+	ADCSRA = _BV(ADATE) | _BV(ADIF) | _BV(ADPS2) | _BV(ADPS1); // 128 prescaler
+	ADCSRB = 0x00;
+	DIDR0  = 0x00;  // No digitals were harmed in the making of this ADC
+
+	busVoltage = 0;
+	busVoltageAccum = 0;
+	busVoltageCount = 0;
+	ADCSRA |= _BV(ADEN) | _BV(ADSC) | _BV(ADIE) | _BV(ADIF);
 }
 
 void displayTime(TimeData* time, uint8_t ampm)
@@ -532,7 +558,8 @@ int main(void)
 			mrbus_tx_buffer[MRBUS_PKT_DEST] = 0xFF;
 			mrbus_tx_buffer[MRBUS_PKT_LEN] = 7;
 			mrbus_tx_buffer[5] = 'S';
-			mrbus_tx_buffer[6] = 0;  // Status byte.  Lower three bits are sensor type, 000 = DHT11/DHT22/RHT03
+			mrbus_tx_buffer[6] = 0;  // Status byte - no idea what to use this for
+			mrbus_tx_buffer[7] = busVoltage;
 			changed = 0;
 			mrbus_state |= MRBUS_TX_PKT_READY;
 		}
