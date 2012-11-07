@@ -438,7 +438,8 @@ void init(void)
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
 	timeSourceAddress = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
-	deadReckoningTime = maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);	
+	maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);	
+	deadReckoningTime = 0; // Give us dashes until such time that we get a time packet
 	pktPeriod = ((eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_H) << 8) & 0xFF00) | (eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_L) & 0x00FF);
 	
 	fastDecisecs = 0;
