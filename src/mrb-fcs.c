@@ -99,9 +99,6 @@ void incrementTime(TimeData* t, uint8_t incSeconds)
 		t->hours %= 24;
 }
 
-uint8_t displayCharacters[4] = {0,1,2,3};
-uint8_t displayDecimals = 0;
-
 // I screwed up the layout...
 //  Digit 0 is actually driven by bit 1, digit 1 by bit 0, digit 2 by bit 3, and digit 3 by bit 2
 
@@ -175,6 +172,14 @@ const uint8_t SEGMENTS[] =
 
 #define DECIMAL_PM_INDICATOR 0x08
 
+uint8_t displayCharacters[4] = {LED_CHAR_DASH,LED_CHAR_DASH,LED_CHAR_DASH,LED_CHAR_DASH};
+uint8_t displayDecimals = 0;
+
+#define TIME_FLAGS_DISP_FAST       0x01
+#define TIME_FLAGS_DISP_FAST_HOLD  0x02
+#define TIME_FLAGS_DISP_REAL_AMPM  0x04
+#define TIME_FLAGS_DISP_FAST_AMPM  0x08
+
 // ******** Start 100 Hz Timer 
 
 // Initialize a 100Hz timer for use in triggering events.
@@ -188,8 +193,9 @@ uint8_t ticks=0;
 uint8_t decisecs=0;
 uint8_t colon_ticks=0;
 volatile uint16_t fastDecisecs=0;
+uint16_t pktPeriod = 0;
 uint8_t maxDeadReckoningTime = 50;
-uint8_t deadReckoningTime = 50;
+uint8_t deadReckoningTime = 0;
 uint8_t timeSourceAddress = 0xFF;
 
 void initialize400HzTimer(void)
@@ -221,21 +227,19 @@ ISR(TIMER0_COMPA_vect)
 	PORTB |= segments & 0x3F;
 	PORTD |= segments & 0xC0;
 	
-	
-	
 	if (++colon_ticks > 200)
 	{
-		colon_ticks = 0;
+		colon_ticks -= 200;
 		PORTD ^= _BV(PD3);
 	}
 	
 	if (++ticks >= 40)
 	{
-		ticks = 0;
+		ticks -= 40;
 		decisecs++;
 		if (deadReckoningTime)
 			deadReckoningTime--;
-		if (0x01 == (flags & (0x01 | 0x08)))
+		if (TIME_FLAGS_DISP_FAST == (flags & (TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD)))
 			fastDecisecs += scaleFactor;
 	}
 }
@@ -424,12 +428,20 @@ void init(void)
 	wdt_disable();
 #endif
 
+	// Setup ADC
+	ADMUX  = 0x46;  // AVCC reference; ADC6 input
+	ADCSRA = _BV(ADATE) | _BV(ADIF) | _BV(ADPS2) | _BV(ADPS1); // 128 prescaler
+	ADCSRB = 0x00;
+	DIDR0  = 0x00;  // No digitals were harmed in the making of this ADC
+
+
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
 	timeSourceAddress = eeprom_read_byte((uint8_t*)MRBUS_CLOCK_SOURCE_ADDRESS);
 	deadReckoningTime = maxDeadReckoningTime = eeprom_read_byte((uint8_t*)MRBUS_MAX_DEAD_RECKONING);	
+	pktPeriod = ((eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_H) << 8) & 0xFF00) | (eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_UPDATE_L) & 0x00FF);
 	
-	fastDecisecs = 0;	
+	fastDecisecs = 0;
 	
 	// Setup ADC
 	ADMUX  = 0x46;  // AVCC reference; ADC6 input
@@ -484,14 +496,9 @@ void displayTime(TimeData* time, uint8_t ampm)
 	}
 }
 
-#define TIME_FLAGS_DISP_FAST       0x01
-#define TIME_FLAGS_DISP_FAST_HOLD  0x02
-#define TIME_FLAGS_DISP_REAL_AMPM  0x04
-#define TIME_FLAGS_DISP_FAST_AMPM  0x08
-
 int main(void)
 {
-	uint8_t changed=0, i;
+	uint8_t statusTransmit=0, i;
 	// Application initialization
 	init();
 
@@ -525,10 +532,10 @@ int main(void)
 			PktHandler();
 			
 		/* Events that happen every second */
-		if (decisecs >= 10)
+		if (0 != pktPeriod && decisecs >= pktPeriod)
 		{
-			decisecs = 0;
-			changed = 1;		
+			decisecs -= pktPeriod;
+			statusTransmit = 1;		
 		}
 
 		if ((TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD) == (flags & (TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD)) )  // Hold state
@@ -544,7 +551,7 @@ int main(void)
 		else
 			displayTime(&realTime, flags & TIME_FLAGS_DISP_REAL_AMPM);
 
-		if((flags & 0x01) && !(flags & 0x08) && fastDecisecs >= 10)
+		if ((flags & TIME_FLAGS_DISP_FAST) && !(flags & TIME_FLAGS_DISP_FAST_HOLD) && fastDecisecs >= 10)
 		{
 			uint8_t fastTimeSecs = fastDecisecs / 10;
 			incrementTime(&fastTime, fastTimeSecs);
@@ -552,15 +559,15 @@ int main(void)
 		}
 		
 
-		if (changed && !(mrbus_state & MRBUS_TX_PKT_READY))
+		if (statusTransmit && !(mrbus_state & MRBUS_TX_PKT_READY))
 		{
 			mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
 			mrbus_tx_buffer[MRBUS_PKT_DEST] = 0xFF;
-			mrbus_tx_buffer[MRBUS_PKT_LEN] = 7;
+			mrbus_tx_buffer[MRBUS_PKT_LEN] = 8;
 			mrbus_tx_buffer[5] = 'S';
 			mrbus_tx_buffer[6] = 0;  // Status byte - no idea what to use this for
 			mrbus_tx_buffer[7] = busVoltage;
-			changed = 0;
+			statusTransmit = 0;
 			mrbus_state |= MRBUS_TX_PKT_READY;
 		}
 
