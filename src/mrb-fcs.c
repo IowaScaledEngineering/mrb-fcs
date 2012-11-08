@@ -53,7 +53,7 @@ extern uint8_t mrbus_activity;
 uint8_t mrbus_dev_addr = 0x11;
 uint8_t output_status=0;
 
-uint8_t scaleFactor = 1;
+uint16_t scaleFactor = 10;
 uint8_t flags = 0;
 
 typedef struct
@@ -192,7 +192,8 @@ uint8_t displayDecimals = 0;
 uint8_t ticks=0;
 uint8_t decisecs=0;
 uint8_t colon_ticks=0;
-volatile uint16_t fastDecisecs=0;
+volatile uint16_t fastDecisecs = 0;
+volatile uint8_t scaleTenthsAccum = 0;
 uint16_t pktPeriod = 0;
 uint8_t maxDeadReckoningTime = 50;
 uint8_t deadReckoningTime = 0;
@@ -240,7 +241,16 @@ ISR(TIMER0_COMPA_vect)
 		if (deadReckoningTime)
 			deadReckoningTime--;
 		if (TIME_FLAGS_DISP_FAST == (flags & (TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD)))
-			fastDecisecs += scaleFactor;
+		{
+			fastDecisecs += scaleFactor / 10;
+			scaleTenthsAccum += scaleFactor % 10;
+			if (scaleTenthsAccum > 10)
+			{
+				fastDecisecs++;
+				scaleTenthsAccum -= 10;
+			}		
+		
+		}
 	}
 }
 
@@ -390,10 +400,11 @@ void PktHandler(void)
 			fastTime.hours =  mrbus_rx_buffer[10];
 			fastTime.minutes =  mrbus_rx_buffer[11];
 			fastTime.seconds = mrbus_rx_buffer[12];
-			scaleFactor = mrbus_rx_buffer[13];
+			scaleFactor = (((uint16_t)mrbus_rx_buffer[13])<<8) + (uint16_t)mrbus_rx_buffer[14];
 		}		
 		// If we got a packet, there's no dead reckoning time anymore
 		fastDecisecs = 0;
+		scaleTenthsAccum = 0;
 		deadReckoningTime = maxDeadReckoningTime;
 	}
 
@@ -427,13 +438,6 @@ void init(void)
 	wdt_reset();
 	wdt_disable();
 #endif
-
-	// Setup ADC
-	ADMUX  = 0x46;  // AVCC reference; ADC6 input
-	ADCSRA = _BV(ADATE) | _BV(ADIF) | _BV(ADPS2) | _BV(ADPS1); // 128 prescaler
-	ADCSRB = 0x00;
-	DIDR0  = 0x00;  // No digitals were harmed in the making of this ADC
-
 
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
