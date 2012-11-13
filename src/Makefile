@@ -27,21 +27,23 @@
 
 BASE_NAME = mrb-fcs
 
-# ATmega48P 20MHz @ 5.0V
-#DEVICE  = atmega48
+# Wireless FCS
 DEVICE = atmega328p
 F_CPU   = 20000000  # Hz
 FUSE_L  = 0xD7
 FUSE_H  = 0xD0
 FUSE_E  = 0x05
-
-# Wireless FCS
 DEFINES = -DMRBEE -DMRBEE_BAUD=115200 -DSWREV=0 -DHWREV_MAJOR=1 -DHWREV_MINOR=0 -DXBEE_IGNORE_FLOW=1
 SRCS = $(BASE_NAME).c ../../mrbus/src/mrbus-crc.c ../../mrbee/src/mrbee.c ../../mrbee/src/xbee.c
 INCS = ../../mrbus/src/mrbus.h ../../mrbee/src/mrbee.h ../../mrbee/src/xbee.h
 
 # Wired FCS
-#DEFINES = -DMRBUS
+#DEVICE  = atmega48
+#F_CPU   = 20000000  # Hz
+#FUSE_L  = 0xD7
+#FUSE_H  = 0xD0
+#FUSE_E  = 0x01
+#DEFINES = -DMRBUS -DSWREV=0 -DHWREV_MAJOR=1 -DHWREV_MINOR=0
 #INCS = ../../mrbus/src/mrbus.h ../../mrbus/src/mrbus-avr.h
 #SRCS = $(BASE_NAME).c ../../mrbus/src/mrbus-avr.c ../../mrbus/src/mrbus-crc.c
 
