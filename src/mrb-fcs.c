@@ -368,7 +368,7 @@ void PktHandler(void)
         // Version
         mrbus_tx_buffer[MRBUS_PKT_DEST] = mrbus_rx_buffer[MRBUS_PKT_SRC];
 		mrbus_tx_buffer[MRBUS_PKT_SRC] = mrbus_dev_addr;
-        mrbus_tx_buffer[MRBUS_PKT_LEN] = 14;
+        mrbus_tx_buffer[MRBUS_PKT_LEN] = 15;
         mrbus_tx_buffer[MRBUS_PKT_TYPE] = 'v';
 #ifdef MRBEE
         mrbus_tx_buffer[6]  = MRBUS_VERSION_WIRELESS;
@@ -380,8 +380,9 @@ void PktHandler(void)
         mrbus_tx_buffer[9]  = SWREV; // Software Revision
         mrbus_tx_buffer[10]  = HWREV_MAJOR; // Hardware Major Revision
         mrbus_tx_buffer[11]  = HWREV_MINOR; // Hardware Minor Revision
-        mrbus_tx_buffer[12] = 'T';
-        mrbus_tx_buffer[13] = 'H';
+        mrbus_tx_buffer[12] = 'F';
+        mrbus_tx_buffer[13] = 'C';
+        mrbus_tx_buffer[13] = 'S';
         mrbus_state |= MRBUS_TX_PKT_READY;
         goto PktIgnore;
     }
