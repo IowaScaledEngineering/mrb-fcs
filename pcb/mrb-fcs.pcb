@@ -6,7 +6,7 @@ FileVersion[20070407]
 PCB["" 350000 175000]
 
 Grid[500.0 0 0 1]
-Cursor[0 0 0.000000]
+Cursor[341000 2500 0.000000]
 PolyArea[200000000.000000]
 Thermal[0.500000]
 DRC[800 1000 800 1000 2000 1000]
@@ -2654,6 +2654,7 @@ Layer(5 "silk")
 	Text[233000 3000 0 100 "Iowa Scaled Engineering" "clearline"]
 	Text[233500 16000 0 100 "MRB-FCS v1.1" "clearline"]
 	Text[233500 9000 0 100 "http://www.iascaled.com" "clearline"]
+	Text[284500 16000 0 100 "(C)2012" "clearline"]
 )
 NetList()
 (
