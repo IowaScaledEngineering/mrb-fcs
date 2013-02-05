@@ -1,16 +1,16 @@
-G04 start of page 8 for group -4078 idx -4078 *
+G04 start of page 9 for group -4078 idx -4078 *
 G04 Title: (unknown), bottomsilk *
 G04 Creator: pcb 20110918 *
-G04 CreationDate: Sun 03 Feb 2013 12:44:51 AM GMT UTC *
-G04 For: petersen *
+G04 CreationDate: Tue 05 Feb 2013 03:16:39 AM GMT UTC *
+G04 For: railfan *
 G04 Format: Gerber/RS-274X *
 G04 PCB-Dimensions: 350000 175000 *
 G04 PCB-Coordinate-Origin: lower left *
 %MOIN*%
 %FSLAX25Y25*%
 %LNBOTTOMSILK*%
-%ADD83C,0.0100*%
-G54D83*X197400Y137900D02*X338600D01*
+%ADD81C,0.0100*%
+G54D81*X197400Y137900D02*X338600D01*
 X197400Y36100D02*X338600D01*
 Y137900D01*
 X197400Y36100D02*Y137900D01*
