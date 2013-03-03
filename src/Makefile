@@ -28,7 +28,7 @@
 BASE_NAME = mrb-fcs
 
 # Wireless FCS
-DEVICE = atmega328p
+DEVICE = atmega328
 F_CPU   = 20000000  # Hz
 FUSE_L  = 0xD7
 FUSE_H  = 0xD0
@@ -51,7 +51,7 @@ OBJS = ${SRCS:.c=.o}
 INCLUDES = -I. -I../../mrbus/src -I../../mrbee/src
 CFLAGS  = $(INCLUDES) -Wall -Os
 
-AVRDUDE = avrdude -c usbtiny -p $(DEVICE) 
+AVRDUDE = avrdude -c usbtiny -p $(DEVICE)
 
 COMPILE = avr-gcc $(DEFINES) -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE)
 
@@ -82,7 +82,7 @@ read:
 
 # rule for uploading firmware:
 flash: $(BASE_NAME).hex
-	$(AVRDUDE) -U flash:w:$(BASE_NAME).hex:i
+	$(AVRDUDE) -B1 -U flash:w:$(BASE_NAME).hex:i
 
 # rule for deleting dependent files (those which can be built by Make):
 clean:

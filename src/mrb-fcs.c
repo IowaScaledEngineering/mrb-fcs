@@ -517,7 +517,7 @@ int main(void)
 	PORTC |= 0x0F;
 
 	DDRB |= 0x3F;
-	DDRD |= 0xC0;
+	DDRD |= 0xC8;
 	DDRC |= 0x0F;
 	
 	// Initialize MRBus core
