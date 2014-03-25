@@ -42,11 +42,6 @@ LICENSE:
 
 #include "mrbus.h"
 
-extern uint8_t mrbus_rx_buffer[MRBUS_BUFFER_SIZE];
-extern uint8_t mrbus_tx_buffer[MRBUS_BUFFER_SIZE];
-extern uint8_t mrbus_state;
-extern uint8_t mrbus_activity;
-
 #define MRBUS_CLOCK_SOURCE_ADDRESS  0x10
 #define MRBUS_MAX_DEAD_RECKONING    0x11
 

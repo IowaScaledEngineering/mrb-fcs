@@ -49,7 +49,7 @@ INCS = ../../mrbus/src/mrbus.h ../../mrbee/src/mrbee.h ../../mrbee/src/xbee.h
 
 OBJS = ${SRCS:.c=.o}
 INCLUDES = -I. -I../../mrbus/src -I../../mrbee/src
-CFLAGS  = $(INCLUDES) -Wall -Os
+CFLAGS  = $(INCLUDES) -Wall -Os -std=gnu99
 
 AVRDUDE = avrdude -c usbtiny -p $(DEVICE)
 
