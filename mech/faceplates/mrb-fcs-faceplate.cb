@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<CADFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="0.9.8.0" Name="SlaveDisplay" units="Inches">
+<CADFile xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" Version="0.9.8.0" Name="mrb-fcs-faceplate" units="Inches">
   <layers>
     <layer name="Outside" color="127,255,0">
       <ModificationCount>0</ModificationCount>
       <objects>
         <rect id="9" Closed="true" w="4.5" h="2.75">
-          <ModificationCount>6</ModificationCount>
+          <ModificationCount>8</ModificationCount>
           <mat m="Identity" />
           <pts>
             <p>0,0,0</p>
@@ -15,19 +15,19 @@
           </pts>
         </rect>
         <arc id="10" p="0.125,0.125,0" r="0.125" s="180" w="90">
-          <ModificationCount>12</ModificationCount>
+          <ModificationCount>14</ModificationCount>
           <mat m="Identity" />
         </arc>
         <arc id="11" p="4.375,0.125,0" r="0.125" s="270" w="90">
-          <ModificationCount>11</ModificationCount>
+          <ModificationCount>13</ModificationCount>
           <mat m="Identity" />
         </arc>
         <arc id="12" p="4.375,2.625,0" r="0.125" s="0" w="90">
-          <ModificationCount>10</ModificationCount>
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </arc>
         <arc id="13" p="0.125,2.625,0" r="0.125" s="90" w="90">
-          <ModificationCount>10</ModificationCount>
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </arc>
       </objects>
@@ -35,36 +35,36 @@
     <layer name="Drill Holes" color="127,255,0">
       <ModificationCount>0</ModificationCount>
       <objects>
-        <circle id="1" c="0.67,0.67,0" d="0.14">
-          <ModificationCount>10</ModificationCount>
+        <circle id="1" c="0.67,0.67,0" d="0.148">
+          <ModificationCount>13</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="2" c="3.83,0.675,0" d="0.14">
-          <ModificationCount>11</ModificationCount>
+        <circle id="2" c="3.83,0.675,0" d="0.148">
+          <ModificationCount>14</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="3" c="3.83,2.08,0" d="0.14">
-          <ModificationCount>11</ModificationCount>
+        <circle id="3" c="3.83,2.08,0" d="0.148">
+          <ModificationCount>14</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="4" c="0.67,2.08,0" d="0.14">
-          <ModificationCount>10</ModificationCount>
+        <circle id="4" c="0.67,2.08,0" d="0.148">
+          <ModificationCount>13</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="5" c="0.25,0.25,0" d="0.14">
-          <ModificationCount>9</ModificationCount>
+        <circle id="5" c="0.25,0.25,0" d="0.148">
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="6" c="4.25,0.25,0" d="0.14">
-          <ModificationCount>9</ModificationCount>
+        <circle id="6" c="4.25,0.25,0" d="0.148">
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="7" c="4.25,2.5,0" d="0.14">
-          <ModificationCount>9</ModificationCount>
+        <circle id="7" c="4.25,2.5,0" d="0.148">
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </circle>
-        <circle id="8" c="0.25,2.5,0" d="0.14">
-          <ModificationCount>9</ModificationCount>
+        <circle id="8" c="0.25,2.5,0" d="0.148">
+          <ModificationCount>12</ModificationCount>
           <mat m="Identity" />
         </circle>
       </objects>
