@@ -554,9 +554,13 @@ int main(void)
 
 		if ((flags & TIME_FLAGS_DISP_FAST) && !(flags & TIME_FLAGS_DISP_FAST_HOLD) && fastDecisecs >= 10)
 		{
-			uint8_t fastTimeSecs = fastDecisecs / 10;
+			uint8_t fastTimeSecs;
+			ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
+			{
+				fastTimeSecs = fastDecisecs / 10;
+				fastDecisecs -= fastTimeSecs * 10;
+			}
 			incrementTime(&fastTime, fastTimeSecs);
-			fastDecisecs -= fastTimeSecs * 10;
 		}
 		
 
