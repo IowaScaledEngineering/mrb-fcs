@@ -24,6 +24,7 @@ LICENSE:
 #include <avr/wdt.h>
 #include <avr/interrupt.h>
 #include <avr/eeprom.h>
+#include <util/atomic.h>
 #include <util/delay.h>
 
 
