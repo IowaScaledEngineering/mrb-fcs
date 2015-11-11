@@ -1,12 +1,12 @@
 #*************************************************************************
-#Title:    MRB-BD42 Makefile
+#Title:    MRB-ANT Makefile
 #Authors:  Michael Petersen <railfan@drgw.net>
 #          Nathan Holmes <maverick@drgw.net>
 #File:     MRB-AVRTEMPLATE Makefile
 #License:  GNU General Public License v3
 #
 #LICENSE:
-#    Copyright (C) 2012 Nathan Holmes and Michael Petersen
+#    Copyright (C) 2015 Nathan Holmes and Michael Petersen
 #
 #    Derived from example WinAVR project Makefile
 #
@@ -27,62 +27,83 @@
 
 BASE_NAME = mrb-fcs
 
-# Wireless FCS
-DEVICE = atmega328
+# ATmega328P 20MHz @ 5.0V
+DEVICE  = atmega328p
 F_CPU   = 20000000  # Hz
 FUSE_L  = 0xD7
-FUSE_H  = 0xD0
-FUSE_E  = 0x05
-DEFINES = -DMRBEE -DMRBEE_BAUD=115200 -DSWREV=0 -DHWREV_MAJOR=1 -DHWREV_MINOR=0 -DXBEE_IGNORE_FLOW=1
-SRCS = $(BASE_NAME).c ../../mrbus/src/mrbus-crc.c ../../mrbee/src/mrbee.c ../../mrbee/src/xbee.c
-INCS = ../../mrbus/src/mrbus.h ../../mrbee/src/mrbee.h ../../mrbee/src/xbee.h
+FUSE_H  = 0xD1
+FUSE_E  = 0x04
+
+GITREV := 'GIT_REV=0x$(shell git rev-parse --short=6 HEAD)L'
+
+MRBUS_DIRECTORY=./mrbus/src
+PROGRAMMER_TYPE=avrispmkii
+#PROGRAMMER_TYPE=usbtiny
+PROGRAMMER_PORT=usb
 
 # Wired FCS
-#DEVICE  = atmega48
-#F_CPU   = 20000000  # Hz
-#FUSE_L  = 0xD7
-#FUSE_H  = 0xD0
-#FUSE_E  = 0x01
-#DEFINES = -DMRBUS -DSWREV=0 -DHWREV_MAJOR=1 -DHWREV_MINOR=0
-#INCS = ../../mrbus/src/mrbus.h ../../mrbus/src/mrbus-avr.h
-#SRCS = $(BASE_NAME).c ../../mrbus/src/mrbus-avr.c ../../mrbus/src/mrbus-crc.c
+#DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV)
+#SRCS = $(BASE_NAME).c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
+#INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h
+
+# Wireless FCS
+DEFINES = -DMRBEE -DENABLE_WATCHDOG -D$(GITREV) -DXBEE_IGNORE_FLOW=1
+SRCS = $(BASE_NAME).c $(MRBUS_DIRECTORY)/mrbee-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
+INCS = $(MRBUS_DIRECTORY)/mrbee.h $(MRBUS_DIRECTORY)/mrbee-avr.h
+
+# PROGRAMMER_TYPE defines the programmer to be used
+# Common options are usbtiny and avrispmkii
+
+AVRDUDE = avrdude -P $(PROGRAMMER_PORT) -c $(PROGRAMMER_TYPE) -p $(DEVICE) -B1 -F
+AVRDUDE_SLOW = avrdude -P $(PROGRAMMER_PORT) -c $(PROGRAMMER_TYPE) -p $(DEVICE) -B32 -F
 
 OBJS = ${SRCS:.c=.o}
-INCLUDES = -I. -I../../mrbus/src -I../../mrbee/src
-CFLAGS  = $(INCLUDES) -Wall -Os -std=gnu99
+INCLUDES = -I. -I$(MRBUS_DIRECTORY) -I$(I2CLIB_DIRECTORY)
+CFLAGS  = $(INCLUDES) -Wall -O2 -std=gnu99 -ffunction-sections -fdata-sections
+LDFLAGS = -Wl,-gc-sections
 
-AVRDUDE = avrdude -c usbtiny -p $(DEVICE)
-
-COMPILE = avr-gcc $(DEFINES) -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE)
+COMPILE = avr-gcc $(DEFINES) -DF_CPU=$(F_CPU) $(CFLAGS) $(LDFLAGS) -mmcu=$(DEVICE)
 
 # -E -dM options preprocess only and output results of #define
 #COMPILE = avr-gcc -Wall -Os -DF_CPU=$(F_CPU) $(CFLAGS) -mmcu=$(DEVICE) -E -dM
 
 help:
+	@echo "make setup...... init/update git submodules"
 	@echo "make hex ....... build $(BASE_NAME).hex"
 	@echo "make flash ..... flash the firmware"
 	@echo "make fuse ...... flash the fuses"
 	@echo "make program ... flash fuses and firmware"
 	@echo "make read ...... read the fuses"
+	@echo "make size ...... memory usage"
 	@echo "make clean ..... delete objects and hex file"
-	@echo "make release.... produce release tarball"
+	@echo "make terminal... open up avrdude terminal"
 
 hex: $(BASE_NAME).hex
 
 program: fuse flash
 
+setup:
+	git submodule init
+	git submodule update
+
+terminal:
+	$(AVRDUDE_SLOW) -t
+
 # rule for programming fuse bits:
 fuse:
 	@[ "$(FUSE_H)" != "" -a "$(FUSE_L)" != "" -a "$(FUSE_E)" != "" ] || \
 		{ echo "*** Invalid Fuse values."; exit 1; }
-	$(AVRDUDE) -U hfuse:w:$(FUSE_H):m -U lfuse:w:$(FUSE_L):m -U efuse:w:$(FUSE_E):m
+	$(AVRDUDE_SLOW) -U hfuse:w:$(FUSE_H):m -U lfuse:w:$(FUSE_L):m -U efuse:w:$(FUSE_E):m
 
 read:
 	$(AVRDUDE) -v
 
+size:
+	avr-size -C --mcu=$(DEVICE) $(BASE_NAME).elf
+
 # rule for uploading firmware:
 flash: $(BASE_NAME).hex
-	$(AVRDUDE) -B1 -U flash:w:$(BASE_NAME).hex:i
+	$(AVRDUDE) -U flash:w:$(BASE_NAME).hex:i
 
 # rule for deleting dependent files (those which can be built by Make):
 clean:
@@ -121,46 +142,3 @@ disasm:	$(BASE_NAME).elf
 
 PWD := $(shell pwd)
 
-release: hex
-	@echo -n "Creating temporary build directories..."
-	@$(eval BTMPDIR := $(shell mktemp -d))
-	@$(eval TMPDIR := $(BTMPDIR)/$(BASE_NAME))
-	@$(eval BOILERPLATE_FILES := $(shell find ../../docs/release-boilerplate -type f -name *.txt -print))
-	@$(eval RELEASE_TIME := $(shell date +"%d%b%Y-%H%Mh"))
-	@mkdir -p $(TMPDIR)/mrbus/src
-	@mkdir -p $(TMPDIR)/$(BASE_NAME)/src
-	@echo "  [done]"
-
-	@echo -n "Copying boilerplate files..."
-	@cp $(BOILERPLATE_FILES) $(TMPDIR)
-	@echo "  [done]"
-
-	@echo -n "Copying Makefile..."
-	@cp Makefile $(TMPDIR)/$(BASE_NAME)/src/Makefile
-
-	@echo -n "Copying object..."
-	@cp $(BASE_NAME).hex $(TMPDIR)/$(BASE_NAME)/src/$(BASE_NAME).hex
-	@echo "  [done]"
-
-	@echo -n "Copying source files..."
-	@tar cPf - $(INCS) | tar xPf - -C $(TMPDIR)/$(BASE_NAME)/src/
-	@echo "  [done]"
-
-	@echo -n "Copying include files..."
-	@tar cPf - $(SRCS) | tar xPf - -C $(TMPDIR)/$(BASE_NAME)/src/
-	@echo "  [done]"
-
-	@echo -n "Writing file SVN statuses..."
-	@echo "### Archive built at $(RELEASE_TIME)" > $(TMPDIR)/$(BASE_NAME)/src/FILE_SVN_VERSIONS
-	@svn status -v $(BOILERPLATE_FILES) >> $(TMPDIR)/$(BASE_NAME)/src/FILE_SVN_VERSIONS
-	@svn status -v Makefile >> $(TMPDIR)/$(BASE_NAME)/src/FILE_SVN_VERSIONS
-	@svn status -v $(INCS) >> $(TMPDIR)/$(BASE_NAME)/src/FILE_SVN_VERSIONS
-	@svn status -v $(SRCS) >> $(TMPDIR)/$(BASE_NAME)/src/FILE_SVN_VERSIONS
-	@echo "  [done]"
-	
-
-	@echo -n "Creating tarball..."
-	@tar zcf $(BASE_NAME)-$(RELEASE_TIME).tgz -C $(BTMPDIR) $(BASE_NAME)
-	@echo "  [done]"
-
-	@echo "Release in $(BASE_NAME)-$(RELEASE_TIME).tgz"
