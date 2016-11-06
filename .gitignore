@@ -8,3 +8,4 @@
 *.cmd
 *.net
 *.new.pcb
+*.bak*
