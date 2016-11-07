@@ -5,7 +5,7 @@ FileVersion[20091103]
 
 PCB["" 3500.00mil 1750.00mil]
 
-Grid[100.000000 0.0000 0.0000 1]
+Grid[500.000000 0.0000 0.0000 1]
 PolyArea[200000000.000000]
 Thermal[0.500000]
 DRC[8.00mil 10.00mil 8.00mil 8.00mil 20.00mil 10.00mil]
@@ -794,7 +794,7 @@ Symbol['~' 12.00mil]
 	SymbolLine[20.00mil 35.00mil 25.00mil 30.00mil 8.00mil]
 )
 Attribute("PCB::grid::unit" "mil")
-Attribute("PCB::grid::size" "1.00mil")
+Attribute("PCB::grid::size" "5.00mil")
 Via[1200.00mil 1145.00mil 40.00mil 0.0000 0.0000 20.00mil "" ""]
 Via[1170.00mil 790.00mil 40.00mil 0.0000 0.0000 20.00mil "" ""]
 Via[1170.00mil 740.00mil 40.00mil 0.0000 0.0000 20.00mil "" ""]
@@ -895,13 +895,13 @@ Element["hidename" "STANDOFF_HEX_n4" "H4" "unknown" 170.00mil 1580.00mil 130.00m
 
 	)
 
-Element["hidename" "STANDOFF_HEX_n4" "H3" "unknown" 3320.00mil 1580.00mil -200.00mil 80.00mil 0 100 ""]
+Element["hidename" "STANDOFF_HEX_n4" "H3" "unknown" 3330.00mil 1580.00mil -200.00mil 80.00mil 0 100 ""]
 (
 	Pin[0.0000 0.0000 293.68mil 0.0000 299.68mil 128.50mil "screw" "1" ""]
 
 	)
 
-Element["hidename" "STANDOFF_HEX_n4" "H2" "unknown" 3320.00mil 170.00mil 55.00mil 160.00mil 0 100 ""]
+Element["hidename" "STANDOFF_HEX_n4" "H2" "unknown" 3330.00mil 170.00mil 55.00mil 160.00mil 0 100 ""]
 (
 	Pin[0.0000 0.0000 293.68mil 32.00mil 299.68mil 128.50mil "screw" "1" ""]
 
@@ -2564,6 +2564,10 @@ Layer(2 "solder")
 )
 Layer(3 "outline")
 (
+	Line[0.0000 1750.00mil 3500.00mil 1750.00mil 10.00mil 20.00mil "clearline"]
+	Line[3500.00mil 1750.00mil 3500.00mil 0.0000 10.00mil 20.00mil "clearline"]
+	Line[3500.00mil 0.0000 0.0000 0.0000 10.00mil 20.00mil "clearline"]
+	Line[0.0000 0.0000 0.0000 1750.00mil 10.00mil 20.00mil "clearline"]
 )
 Layer(4 "silk")
 (
