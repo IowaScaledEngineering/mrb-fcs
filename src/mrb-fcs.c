@@ -235,12 +235,13 @@ ISR(TIMER0_COMPA_vect)
 	}
 }
 
-volatile uint16_t busVoltageAccum=0;
 volatile uint16_t busVoltage=0;
-volatile uint8_t busVoltageCount=0;
 
 ISR(ADC_vect)
 {
+	static uint8_t busVoltageCount = 0;
+	static uint16_t busVoltageAccum = 0;	
+	
 	busVoltageAccum += ADC;
 	if (++busVoltageCount >= 64)
 	{
