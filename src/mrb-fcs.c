@@ -449,8 +449,6 @@ void init(void)
 	DIDR0  = 0x00;  // No digitals were harmed in the making of this ADC
 
 	busVoltage = 0;
-	busVoltageAccum = 0;
-	busVoltageCount = 0;
 	ADCSRA |= _BV(ADEN) | _BV(ADSC) | _BV(ADIE) | _BV(ADIF);
 
 }
