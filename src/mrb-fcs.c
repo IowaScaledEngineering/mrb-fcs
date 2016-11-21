@@ -5,7 +5,7 @@ File:     $Id: $
 License:  GNU General Public License v3
 
 LICENSE:
-    Copyright (C) 2012-2015 Nathan Holmes
+    Copyright (C) 2016 Nathan D. Holmes
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -26,7 +26,8 @@ LICENSE:
 #include <avr/eeprom.h>
 #include <util/atomic.h>
 #include <util/delay.h>
-
+#include "avr-i2c-master.h"
+#include "tlc59116.h"
 
 #ifdef MRBEE
 // If wireless, redefine the common variables and functions
@@ -47,7 +48,11 @@ MRBusPacket mrbusRxPktBufferArray[MRBUS_RX_BUFFER_DEPTH];
 #define MRBUS_CLOCK_SOURCE_ADDRESS  0x10
 #define MRBUS_MAX_DEAD_RECKONING    0x11
 
-uint8_t mrbus_dev_addr = 0x11;
+
+#define I2C_ADDR_TLC59116_U3  0xC0
+#define I2C_ADDR_TLC59116_U4  0xC2
+
+uint8_t mrbus_dev_addr = 3;
 uint8_t output_status=0;
 
 uint16_t scaleFactor = 10;
@@ -95,18 +100,6 @@ void incrementTime(TimeData* t, uint8_t incSeconds)
 	if (t->hours >= 24)
 		t->hours %= 24;
 }
-
-// I screwed up the layout...
-//  Digit 0 is actually driven by bit 1, digit 1 by bit 0, digit 2 by bit 3, and digit 3 by bit 2
-
-const uint8_t DIGIT_DRIVE [] =
-{
-	0xFD, // Digit 0
-	0xFE, // Digit 1
-	0xF7, // Digit 2
-	0xFB  // Digit 3
-};
-
 
 const uint8_t SEGMENTS[] = 
 {
@@ -167,6 +160,7 @@ const uint8_t SEGMENTS[] =
 #define LED_CHAR_BLANK 36
 #define LED_CHAR_DASH  37
 
+#define DECIMAL_COLON        0x01
 #define DECIMAL_PM_INDICATOR 0x08
 
 uint8_t displayCharacters[4] = {LED_CHAR_DASH,LED_CHAR_DASH,LED_CHAR_DASH,LED_CHAR_DASH};
@@ -176,6 +170,8 @@ uint8_t displayDecimals = 0;
 #define TIME_FLAGS_DISP_FAST_HOLD  0x02
 #define TIME_FLAGS_DISP_REAL_AMPM  0x04
 #define TIME_FLAGS_DISP_FAST_AMPM  0x08
+#define TIME_FLAGS_UPDATE_DISPLAY  0x40
+#define TIME_FLAGS_COLON_STATE     0x80
 
 // ******** Start 100 Hz Timer 
 
@@ -188,7 +184,7 @@ uint8_t displayDecimals = 0;
 
 uint8_t ticks=0;
 uint8_t decisecs=0;
-uint8_t colon_ticks=0;
+
 volatile uint16_t fastDecisecs = 0;
 volatile uint8_t scaleTenthsAccum = 0;
 uint16_t pktPeriod = 0;
@@ -196,45 +192,33 @@ uint8_t maxDeadReckoningTime = 50;
 uint8_t deadReckoningTime = 0;
 uint8_t timeSourceAddress = 0xFF;
 
-void initialize400HzTimer(void)
+void initialize100HzTimer(void)
 {
-	// Set up timer 1 for 100Hz interrupts
+	// Set up timer 0 for 100Hz interrupts
 	TCNT0 = 0;
-	OCR0A = 0xC2;
+	OCR0A = 0x6C;
 	ticks = 0;
 	decisecs = 0;
 	TCCR0A = _BV(WGM01);
-	TCCR0B = _BV(CS02); // | _BV(CS00);
+	TCCR0B = _BV(CS02) | _BV(CS00);
 	TIMSK0 |= _BV(OCIE0A);
 }
 
 ISR(TIMER0_COMPA_vect)
 {
-	uint8_t digit = ticks % 4;
-	uint8_t segments = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[digit]];
-	uint8_t anodes = DIGIT_DRIVE[digit];
-	// Shut down segment drives
-	PORTB &= ~(0x3F);
-	PORTD &= ~(0xC0);
-
-	if (displayDecimals & (1<<digit))
-		segments |= 0x80;
-
-	// Switch digit
-	PORTC = (PORTC | 0x0F) & anodes;
-	PORTB |= segments & 0x3F;
-	PORTD |= segments & 0xC0;
-	
-	if (++colon_ticks > 200)
+	static uint8_t colon_ticks=0;
+	if (++colon_ticks > 50)
 	{
-		colon_ticks -= 200;
-		PORTD ^= _BV(PD3);
+		colon_ticks -= 50;
+		flags ^= TIME_FLAGS_COLON_STATE;
 	}
 	
-	if (++ticks >= 40)
+	if (++ticks >= 10)
 	{
-		ticks -= 40;
+		ticks -= 10;
 		decisecs++;
+		flags |= TIME_FLAGS_UPDATE_DISPLAY;
+		
 		if (deadReckoningTime)
 			deadReckoningTime--;
 		if (TIME_FLAGS_DISP_FAST == (flags & (TIME_FLAGS_DISP_FAST | TIME_FLAGS_DISP_FAST_HOLD)))
@@ -467,6 +451,7 @@ void init(void)
 	busVoltageAccum = 0;
 	busVoltageCount = 0;
 	ADCSRA |= _BV(ADEN) | _BV(ADSC) | _BV(ADIE) | _BV(ADIF);
+
 }
 
 void displayTime(TimeData* time, uint8_t ampm)
@@ -510,24 +495,35 @@ void displayTime(TimeData* time, uint8_t ampm)
 	}
 }
 
+void tlc59116Reset()
+{
+	PORTC &= ~(_BV(PC3));
+	_delay_us(100);
+	PORTC |= _BV(PC3);
+}
+
+
 int main(void)
 {
 	uint8_t statusTransmit=0, i;
+	TLC59116Context u3, u4;
 
 	// Application initialization
 	init();
 
-	// Initialize a 100 Hz timer.  See the definition for this function - you can
-	// remove it if you don't use it.
-	initialize400HzTimer();
+	PORTD |= 0x0E;
+	PORTC |= 0x30;
 
-	PORTB &= ~(0x3F);
-	PORTD &= ~(0xC0);
-	PORTC |= 0x0F;
-
-	DDRB |= 0x3F;
 	DDRD |= 0xC8;
 	DDRC |= 0x0F;
+
+	tlc59116Reset();
+
+	// Initialize a 100 Hz timer.  See the definition for this function - you can
+	// remove it if you don't use it.
+	initialize100HzTimer();
+	
+	i2c_master_init();	
 
 	// Initialize MRBus core
 #ifdef MRBEE
@@ -541,6 +537,9 @@ int main(void)
 #endif
 
 	sei();	
+
+	tlc59116Initialize(&u3, I2C_ADDR_TLC59116_U3);
+	tlc59116Initialize(&u4, I2C_ADDR_TLC59116_U4);
 
 	while (1)
 	{
@@ -582,6 +581,29 @@ int main(void)
 				fastDecisecs -= fastTimeSecs * 10;
 			}
 			incrementTime(&fastTime, fastTimeSecs);
+		}
+		
+		if (flags & TIME_FLAGS_UPDATE_DISPLAY)
+		{
+			char a, b, c, d;
+
+			a = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[0]];
+			b = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[1]];
+			c = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[2]];
+			d = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[3]];						
+		
+			if (TIME_FLAGS_COLON_STATE & flags)
+				a |= SEGMENT_DP;
+			if (DECIMAL_PM_INDICATOR & displayDecimals)
+				d |= SEGMENT_DP;
+		
+			// Convert display characters to TLC59116 output lines
+			tlc59116FromCharacters(&u3, a, b);
+			tlc59116FromCharacters(&u4, c, d);
+			// Send I2C updates to parts
+			tlc59116Update(&u3);
+			tlc59116Update(&u4);			
+			flags &= ~(TIME_FLAGS_UPDATE_DISPLAY);
 		}
 		
 

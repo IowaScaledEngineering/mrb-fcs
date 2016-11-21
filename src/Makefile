@@ -1,12 +1,12 @@
 #*************************************************************************
-#Title:    MRB-ANT Makefile
+#Title:    MRB-FCS (Wired and Wireless) v2 Makefile
 #Authors:  Michael Petersen <railfan@drgw.net>
 #          Nathan Holmes <maverick@drgw.net>
-#File:     MRB-AVRTEMPLATE Makefile
+#File:     MRB-FCS Makefile
 #License:  GNU General Public License v3
 #
 #LICENSE:
-#    Copyright (C) 2015 Nathan Holmes and Michael Petersen
+#    Copyright (C) 2016 Nathan Holmes and Michael Petersen
 #
 #    Derived from example WinAVR project Makefile
 #
@@ -27,29 +27,30 @@
 
 BASE_NAME = mrb-fcs
 
-# ATmega328P 20MHz @ 5.0V
+# ATmega328P 11.0592MHz @ 5.0V
 DEVICE  = atmega328p
-F_CPU   = 20000000  # Hz
-FUSE_L  = 0xD7
+F_CPU   = 11059200	# Hz
+FUSE_L  = 0xFF
 FUSE_H  = 0xD1
-FUSE_E  = 0x04
+FUSE_E  = 0x05
 
 GITREV := 'GIT_REV=0x$(shell git rev-parse --short=6 HEAD)L'
 
 MRBUS_DIRECTORY=./mrbus/src
-PROGRAMMER_TYPE=avrispmkii
-#PROGRAMMER_TYPE=usbtiny
+I2CLIB_DIRECTORY=./avr-i2c
+#PROGRAMMER_TYPE=avrispmkii
+PROGRAMMER_TYPE=usbtiny
 PROGRAMMER_PORT=usb
 
 # Wired FCS
-#DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV)
-#SRCS = $(BASE_NAME).c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
-#INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h
+DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV) -I2C_FREQ=100000
+SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
+INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
 
 # Wireless FCS
-DEFINES = -DMRBEE -DENABLE_WATCHDOG -D$(GITREV) -DXBEE_IGNORE_FLOW=1
-SRCS = $(BASE_NAME).c $(MRBUS_DIRECTORY)/mrbee-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c
-INCS = $(MRBUS_DIRECTORY)/mrbee.h $(MRBUS_DIRECTORY)/mrbee-avr.h
+#DEFINES = -DMRBEE -DENABLE_WATCHDOG -D$(GITREV) -DXBEE_IGNORE_FLOW=1 -I2C_FREQ=100000
+#SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbee-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
+#INCS = $(MRBUS_DIRECTORY)/mrbee.h $(MRBUS_DIRECTORY)/mrbee-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
 
 # PROGRAMMER_TYPE defines the programmer to be used
 # Common options are usbtiny and avrispmkii
