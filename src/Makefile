@@ -29,10 +29,11 @@ BASE_NAME = mrb-fcs
 
 # ATmega328P 11.0592MHz @ 5.0V
 DEVICE  = atmega328p
+#F_CPU   = 16000000	# Hz
 F_CPU   = 11059200	# Hz
 FUSE_L  = 0xFF
 FUSE_H  = 0xD1
-FUSE_E  = 0x05
+FUSE_E  = 0xFC
 
 GITREV := 'GIT_REV=0x$(shell git rev-parse --short=6 HEAD)L'
 
@@ -43,14 +44,14 @@ PROGRAMMER_TYPE=usbtiny
 PROGRAMMER_PORT=usb
 
 # Wired FCS
-DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV) -DI2C_FREQ=400000
-SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
-INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
+#DEFINES = -DMRBUS -DENABLE_WATCHDOG -D$(GITREV) -DI2C_FREQ=400000
+#SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbus-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
+#INCS = $(MRBUS_DIRECTORY)/mrbus.h $(MRBUS_DIRECTORY)/mrbus-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
 
 # Wireless FCS
-#DEFINES = -DMRBEE -DENABLE_WATCHDOG -D$(GITREV) -DXBEE_IGNORE_FLOW=1 -I2C_FREQ=100000
-#SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbee-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
-#INCS = $(MRBUS_DIRECTORY)/mrbee.h $(MRBUS_DIRECTORY)/mrbee-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
+DEFINES = -DMRBEE -DENABLE_WATCHDOG -D$(GITREV) -I2C_FREQ=400000
+SRCS = $(BASE_NAME).c tlc59116.c $(MRBUS_DIRECTORY)/mrbee-avr.c $(MRBUS_DIRECTORY)/mrbus-crc.c $(MRBUS_DIRECTORY)/mrbus-queue.c $(I2CLIB_DIRECTORY)/avr-i2c-master.c
+INCS = $(MRBUS_DIRECTORY)/mrbee.h $(MRBUS_DIRECTORY)/mrbee-avr.h $(I2CLIB_DIRECTORY)/avr-i2c-master.h tlc59116.h
 
 # PROGRAMMER_TYPE defines the programmer to be used
 # Common options are usbtiny and avrispmkii
@@ -109,7 +110,7 @@ flash: $(BASE_NAME).hex
 # rule for deleting dependent files (those which can be built by Make):
 clean:
 	rm -f $(BASE_NAME).hex $(BASE_NAME).lst $(BASE_NAME).obj $(BASE_NAME).cof $(BASE_NAME).list $(BASE_NAME).map $(BASE_NAME).eep.hex $(BASE_NAME).elf $(BASE_NAME).s $(OBJS) *.o *.tgz *~
-
+	make -C ./mrbus/src/ clean
 # Generic rule for compiling C files:
 .c.o: $(INCS)
 	$(COMPILE) -c $< -o $@

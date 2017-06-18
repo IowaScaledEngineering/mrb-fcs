@@ -366,9 +366,9 @@ void PktHandler(void)
 		txBuffer[9]  = 0xFF & (GIT_REV); // Software Revision
 		txBuffer[10]  = 1; // Hardware Major Revision
 		txBuffer[11]  = 0; // Hardware Minor Revision
-		txBuffer[12] = 'S';
-		txBuffer[13] = 'A';
-		txBuffer[14] = 'T';
+		txBuffer[12] = 'F';
+		txBuffer[13] = 'C';
+		txBuffer[14] = 'S';
 		txBuffer[15] = ' ';
 		mrbusPktQueuePush(&mrbusTxQueue, txBuffer, txBuffer[MRBUS_PKT_LEN]);
 		goto PktIgnore;
@@ -432,6 +432,12 @@ void init(void)
 	wdt_reset();
 	wdt_disable();
 #endif
+
+	DDRD |= 0xF6;
+	PORTD |= 0x0B;
+
+	DDRC |= 0x0F;
+	PORTC |= 0x30;
 
 	// Initialize MRBus address from EEPROM
 	mrbus_dev_addr = eeprom_read_byte((uint8_t*)MRBUS_EE_DEVICE_ADDR);
@@ -510,20 +516,6 @@ int main(void)
 	// Application initialization
 	init();
 
-	PORTD |= 0x0E;
-	PORTC |= 0x30;
-
-	DDRD |= 0xC8;
-	DDRC |= 0x0F;
-
-	tlc59116Reset();
-
-	// Initialize a 100 Hz timer.  See the definition for this function - you can
-	// remove it if you don't use it.
-	initialize100HzTimer();
-	
-	i2c_master_init();	
-
 	// Initialize MRBus core
 #ifdef MRBEE
 	mrbusPktQueueInitialize(&mrbeeTxQueue, mrbusTxPktBufferArray, MRBUS_TX_BUFFER_DEPTH);
@@ -534,6 +526,14 @@ int main(void)
 	mrbusPktQueueInitialize(&mrbusRxQueue, mrbusRxPktBufferArray, MRBUS_RX_BUFFER_DEPTH);
 	mrbusInit();
 #endif
+
+	// Initialize a 100 Hz timer.  See the definition for this function - you can
+	// remove it if you don't use it.
+	initialize100HzTimer();
+	
+	tlc59116Reset();
+	
+	i2c_master_init();	
 
 	sei();	
 
