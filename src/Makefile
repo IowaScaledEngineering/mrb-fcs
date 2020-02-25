@@ -40,7 +40,7 @@ GITREV := 'GIT_REV=0x$(shell git rev-parse --short=6 HEAD)L'
 MRBUS_DIRECTORY=./mrbus/src
 I2CLIB_DIRECTORY=./avr-i2c
 #PROGRAMMER_TYPE=avrispmkii
-PROGRAMMER_TYPE=usbtiny
+PROGRAMMER_TYPE=iseavrprog
 PROGRAMMER_PORT=usb
 
 # Wired FCS

@@ -57,6 +57,7 @@ uint8_t output_status=0;
 
 uint16_t scaleFactor = 10;
 uint8_t flags = 0;
+uint8_t status = 0;
 
 typedef struct
 {
@@ -170,8 +171,10 @@ uint8_t displayDecimals = 0;
 #define TIME_FLAGS_DISP_FAST_HOLD  0x02
 #define TIME_FLAGS_DISP_REAL_AMPM  0x04
 #define TIME_FLAGS_DISP_FAST_AMPM  0x08
-#define TIME_FLAGS_UPDATE_DISPLAY  0x40
-#define TIME_FLAGS_COLON_STATE     0x80
+
+
+#define TIME_STATUS_UPDATE_DISPLAY  0x40
+#define TIME_STATUS_COLON_STATE     0x80
 
 // ******** Start 100 Hz Timer 
 
@@ -210,14 +213,14 @@ ISR(TIMER0_COMPA_vect)
 	if (++colon_ticks > 50)
 	{
 		colon_ticks -= 50;
-		flags ^= TIME_FLAGS_COLON_STATE;
+		status ^= TIME_STATUS_COLON_STATE;
 	}
 	
 	if (++ticks >= 10)
 	{
 		ticks -= 10;
 		decisecs++;
-		flags |= TIME_FLAGS_UPDATE_DISPLAY;
+		status |= TIME_STATUS_UPDATE_DISPLAY;
 		
 		if (deadReckoningTime)
 			deadReckoningTime--;
@@ -510,7 +513,7 @@ void tlc59116Reset()
 
 int main(void)
 {
-	uint8_t statusTransmit=0, i;
+	uint8_t statusTransmit=0;
 	TLC59116Context u3, u4;
 
 	// Application initialization
@@ -582,7 +585,7 @@ int main(void)
 			incrementTime(&fastTime, fastTimeSecs);
 		}
 		
-		if (flags & TIME_FLAGS_UPDATE_DISPLAY)
+		if (status & TIME_STATUS_UPDATE_DISPLAY)
 		{
 			char a, b, c, d;
 
@@ -591,7 +594,7 @@ int main(void)
 			c = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[2]];
 			d = SEGMENTS[(0 == deadReckoningTime)?LED_CHAR_DASH:displayCharacters[3]];						
 		
-			if (TIME_FLAGS_COLON_STATE & flags)
+			if (TIME_STATUS_COLON_STATE & status)
 				a |= SEGMENT_DP;
 			if (DECIMAL_PM_INDICATOR & displayDecimals)
 				d |= SEGMENT_DP;
@@ -602,7 +605,7 @@ int main(void)
 			// Send I2C updates to parts
 			tlc59116Update(&u3);
 			tlc59116Update(&u4);			
-			flags &= ~(TIME_FLAGS_UPDATE_DISPLAY);
+			status &= ~(TIME_STATUS_UPDATE_DISPLAY);
 		}
 		
 
