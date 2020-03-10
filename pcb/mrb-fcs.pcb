@@ -1,7 +1,7 @@
 # release: pcb 20140316
 
 # To read pcb files, the pcb version (or the git source date) must be >= the file version
-FileVersion[20091103]
+FileVersion[20100606]
 
 PCB["" 3500.00mil 1750.00mil]
 
@@ -9,7 +9,7 @@ Grid[500.000000 0.0000 0.0000 0]
 PolyArea[200000000.000000]
 Thermal[0.500000]
 DRC[8.00mil 5.00mil 8.00mil 8.00mil 20.00mil 8.00mil]
-Flags("showdrc,rubberband,nameonpcb,clearnew,snappin,onlynames")
+Flags("showdrc,rubberband,nameonpcb,clearnew,snappin")
 Groups("1,c:2,s:3")
 Styles["Signal,10.00mil,40.00mil,20.00mil,10.00mil:Power,25.00mil,60.00mil,35.00mil,10.00mil:Fat,40.00mil,60.00mil,35.00mil,10.00mil:Skinny,6.00mil,24.02mil,11.81mil,6.00mil"]
 
@@ -1027,7 +1027,7 @@ Element["" "LED-3mm" "D5" "unknown" 1780.00mil 1225.00mil -170.00mil -30.00mil 0
 
 	)
 
-Element["" "TC2030-NL" "J3" "unknown" 1020.00mil 250.00mil 50.00mil -170.00mil 0 100 ""]
+Element["" "TC2030-NL" "J3" "unknown" 1020.00mil 250.00mil -310.00mil -130.00mil 0 100 ""]
 (
 	Pin[0.0000 -100.00mil 43.00mil 20.00mil 49.00mil 39.00mil "" "" "hole,edge2"]
 	Pin[-200.00mil -60.00mil 43.00mil 20.00mil 49.00mil 39.00mil "" "" "hole,edge2"]
@@ -1623,7 +1623,7 @@ Element["" "RECOM-TO220" "U1" "unknown" 765.00mil 1120.00mil -175.00mil 85.00mil
 
 	)
 
-Element["" "0805" "R7" "1.5k" 1035.00mil 625.00mil 1.8832mm -0.7620mm 0 100 ""]
+Element["" "0805" "R7" "1.5k" 1035.00mil 625.00mil 1.8832mm -30.00mil 0 100 ""]
 (
 	Pad[-35.43mil -3.93mil -35.43mil 3.93mil 51.18mil 0.0000 57.18mil "1" "1" "square"]
 	Pad[35.43mil -3.93mil 35.43mil 3.93mil 51.18mil 20.00mil 57.18mil "2" "2" "square"]
@@ -2300,8 +2300,8 @@ Layer(1 "component")
 	Line[1010.00mil 920.00mil 1020.00mil 910.00mil 10.00mil 20.00mil "clearline"]
 	Line[1020.00mil 910.00mil 1020.00mil 865.00mil 10.00mil 20.00mil "clearline"]
 	Line[1020.00mil 865.00mil 1045.00mil 840.00mil 10.00mil 20.00mil "clearline"]
-	Line[1045.00mil 840.00mil 1045.00mil 825.00mil 10.00mil 0.4064mm "clearline"]
-	Line[1045.00mil 825.00mil 1080.00mil 790.00mil 10.00mil 0.4064mm "clearline"]
+	Line[1045.00mil 840.00mil 1045.00mil 825.00mil 10.00mil 16.00mil "clearline"]
+	Line[1045.00mil 825.00mil 1080.00mil 790.00mil 10.00mil 16.00mil "clearline"]
 	Line[1080.00mil 790.00mil 1080.00mil 770.00mil 10.00mil 20.00mil "clearline"]
 	Line[1075.00mil 685.00mil 1075.00mil 625.00mil 10.00mil 20.00mil "clearline"]
 	Polygon("clearpoly")
@@ -2569,14 +2569,7 @@ Layer(2 "solder")
 	Line[360.00mil 875.00mil 285.00mil 875.00mil 10.00mil 20.00mil "clearline"]
 	Line[285.00mil 875.00mil 210.00mil 950.00mil 10.00mil 20.00mil "clearline"]
 	Line[210.00mil 1150.00mil 210.00mil 1055.00mil 10.00mil 20.00mil "clearline"]
-	Line[210.00mil 1055.00mil 270.00mil 995.00mil 10.00mil 20.00mil "clearline"]
-	Line[270.00mil 995.00mil 270.00mil 940.00mil 10.00mil 20.00mil "clearline"]
-	Line[270.00mil 940.00mil 285.00mil 925.00mil 10.00mil 20.00mil "clearline"]
-	Line[285.00mil 925.00mil 385.00mil 925.00mil 10.00mil 20.00mil "clearline"]
 	Line[385.00mil 925.00mil 435.00mil 875.00mil 10.00mil 20.00mil "clearline"]
-	Line[435.00mil 875.00mil 450.00mil 875.00mil 10.00mil 20.00mil "clearline"]
-	Line[450.00mil 875.00mil 460.00mil 865.00mil 10.00mil 20.00mil "clearline"]
-	Line[460.00mil 865.00mil 460.00mil 825.00mil 10.00mil 20.00mil "clearline"]
 	Line[1400.00mil 670.00mil 1125.00mil 670.00mil 10.00mil 20.00mil "clearline"]
 	Line[1385.00mil 690.00mil 1165.00mil 690.00mil 10.00mil 20.00mil "clearline"]
 	Line[1165.00mil 690.00mil 1130.00mil 725.00mil 10.00mil 20.00mil "clearline"]
@@ -2597,13 +2590,12 @@ Layer(2 "solder")
 	Line[1070.00mil 730.00mil 1070.00mil 715.00mil 10.00mil 20.00mil "clearline"]
 	Line[1070.00mil 715.00mil 1075.00mil 710.00mil 10.00mil 20.00mil "clearline"]
 	Line[1075.00mil 710.00mil 1075.00mil 685.00mil 10.00mil 20.00mil "clearline"]
+	Line[210.00mil 1055.00mil 340.00mil 925.00mil 10.00mil 20.00mil "clearline"]
+	Line[340.00mil 925.00mil 385.00mil 925.00mil 10.00mil 20.00mil "clearline"]
+	Line[435.00mil 875.00mil 460.00mil 825.00mil 10.00mil 20.00mil "clearline"]
 	Polygon("clearpoly")
 	(
 		[380.00mil 1175.00mil] [1385.00mil 1175.00mil] [1385.00mil 1730.00mil] [380.00mil 1730.00mil] 
-	)
-	Polygon("clearpoly")
-	(
-		[400.00mil 1730.00mil] [20.00mil 1730.00mil] [20.00mil 20.00mil] [400.00mil 20.00mil] 
 	)
 	Polygon("clearpoly")
 	(
@@ -2661,6 +2653,13 @@ Layer(2 "solder")
 	Polygon("clearpoly")
 	(
 		[815.00mil 1220.00mil] [320.00mil 1220.00mil] [320.00mil 570.00mil] [815.00mil 570.00mil] 
+	)
+	Polygon("clearpoly")
+	(
+		[400.00mil 1730.00mil] [20.00mil 1730.00mil] [20.00mil 20.00mil] [400.00mil 20.00mil] 
+		Hole (
+			[210.00mil 1150.00mil] [210.00mil 950.00mil] [110.00mil 1050.00mil] 
+		)
 	)
 )
 Layer(3 "outline")
