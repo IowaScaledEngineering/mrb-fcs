@@ -1206,8 +1206,8 @@ Element["" "RPACK2-0606" "R8" "2k" 2145.00mil 635.00mil -25.00mil -105.00mil 0 1
 (
 	Pad[24.13mil 15.75mil 42.83mil 15.75mil 16.73mil 20.00mil 22.73mil "1" "1" "square,edge2"]
 	Pad[24.13mil -15.75mil 42.83mil -15.75mil 16.73mil 20.00mil 22.73mil "2" "2" "square,edge2"]
-	Pad[-42.83mil -15.75mil -24.13mil -15.75mil 16.73mil 20.00mil 22.73mil "3" "3" "square"]
-	Pad[-42.83mil 15.75mil -24.13mil 15.75mil 16.73mil 20.00mil 22.73mil "4" "4" "square"]
+	Pad[-42.83mil -15.75mil -24.13mil -15.75mil 16.73mil 0.0000 22.73mil "3" "3" "square"]
+	Pad[-42.83mil 15.75mil -24.13mil 15.75mil 16.73mil 0.0000 22.73mil "4" "4" "square"]
 	ElementLine [-62.99mil 37.41mil 62.99mil 37.41mil 10.00mil]
 	ElementLine [-62.99mil -37.41mil -62.99mil 37.41mil 10.00mil]
 	ElementLine [-62.99mil -37.41mil 62.99mil -37.41mil 10.00mil]
@@ -1937,7 +1937,6 @@ Layer(1 "component")
 	Line[1248.90mil 931.10mil 1260.00mil 920.00mil 10.00mil 20.00mil "clearline"]
 	Line[1203.90mil 904.53mil 31.1269mm 904.53mil 10.00mil 20.00mil "clearline"]
 	Line[31.1269mm 904.53mil 1240.00mil 890.00mil 10.00mil 20.00mil "clearline"]
-	Line[2110.00mil 845.00mil 2110.00mil 450.00mil 40.00mil 20.00mil ""]
 	Line[60.6859mm 28.8409mm 60.6859mm 27.6659mm 10.00mil 20.00mil "clearline"]
 	Line[60.6859mm 27.6659mm 2340.00mil 1040.00mil 10.00mil 20.00mil "clearline"]
 	Line[58.1861mm 28.8409mm 58.1861mm 27.6659mm 10.00mil 20.00mil "clearline"]
@@ -2442,6 +2441,14 @@ Layer(1 "component")
 	Polygon("clearpoly")
 	(
 		[1445.00mil 300.00mil] [1220.00mil 300.00mil] [1220.00mil 65.00mil] [1445.00mil 65.00mil] 
+	)
+	Polygon("clearpoly")
+	(
+		[2065.00mil 520.00mil] [2155.00mil 520.00mil] [2155.00mil 840.00mil] [2065.00mil 840.00mil] 
+	)
+	Polygon("clearpoly")
+	(
+		[1845.00mil 825.00mil] [2085.00mil 825.00mil] [2085.00mil 755.00mil] [1845.00mil 755.00mil] 
 	)
 )
 Layer(2 "solder")
