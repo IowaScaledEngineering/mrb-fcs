@@ -988,7 +988,7 @@ Element["" "LED-3mm" "D4" "unknown" 1780.00mil 530.00mil -205.00mil -70.00mil 0 
 
 Element["" "TERMBLK2_200MIL" "J2" "unknown" 210.00mil 1050.00mil 30.00mil -25.00mil 3 100 ""]
 (
-	Pin[0.0000 -100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "1" "1" "square"]
+	Pin[0.0000 -100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "1" "1" ""]
 	Pin[0.0000 100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "2" "2" ""]
 	ElementLine [-128.00mil -200.00mil -128.00mil 200.00mil 10.00mil]
 	ElementLine [172.00mil -200.00mil 172.00mil 200.00mil 10.00mil]
@@ -1555,7 +1555,7 @@ Element["" "SOD123T" "D1" "unknown" 265.00mil 390.00mil 120.00mil 30.00mil 1 100
 
 Element["" "TERMBLK2_200MIL" "J1" "unknown" 210.00mil 650.00mil 30.00mil -20.00mil 3 100 ""]
 (
-	Pin[0.0000 -100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "1" "1" "square"]
+	Pin[0.0000 -100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "1" "1" ""]
 	Pin[0.0000 100.00mil 80.00mil 30.00mil 86.00mil 48.00mil "2" "2" "thermal(0X,1X)"]
 	ElementLine [-128.00mil -200.00mil -128.00mil 200.00mil 10.00mil]
 	ElementLine [172.00mil -200.00mil 172.00mil 200.00mil 10.00mil]
