@@ -2761,6 +2761,7 @@ Layer(5 "silk")
 	Line[1810.00mil 1010.00mil 1865.00mil 1065.00mil 10.00mil 20.00mil "clearline"]
 	Line[1810.00mil 1010.00mil 1840.00mil 1010.00mil 10.00mil 20.00mil "clearline"]
 	Line[1810.00mil 1010.00mil 1810.00mil 1040.00mil 10.00mil 20.00mil "clearline"]
+	Line[2425.00mil 185.00mil 3155.00mil 185.00mil 10.00mil 20.00mil "clearline"]
 	Text[75.00mil 490.00mil 3 100 "VIN" "clearline"]
 	Text[75.00mil 730.00mil 3 100 "GND" "clearline"]
 	Text[75.00mil 935.00mil 3 100 "A" "clearline"]
@@ -2771,10 +2772,10 @@ Layer(5 "silk")
 	Text[1335.00mil 1615.00mil 3 100 "ASC" "clearline"]
 	Text[944.00mil 1521.00mil 0 166 "+" "clearline"]
 	Text[1350.00mil 1520.00mil 0 166 "+" "clearline"]
-	Text[2430.00mil 115.00mil 0 100 "Iowa Scaled Engineering" "clearline"]
-	Text[2435.00mil 175.00mil 0 100 "http://www.iascaled.com" "clearline"]
-	Text[2435.00mil 245.00mil 0 100 "MRB-FCS v3.0" "clearline"]
-	Text[2435.00mil 315.00mil 0 100 "(C) 2020  CC BY-SA" "clearline"]
+	Text[2430.00mil 110.00mil 0 100 "Iowa Scaled Engineering" "clearline"]
+	Text[2430.00mil 315.00mil 0 100 "http://www.iascaled.com" "clearline"]
+	Text[2430.00mil 195.00mil 0 100 "MRB-FCS v3.0" "clearline"]
+	Text[2430.00mil 255.00mil 0 100 "(C) 2020  CC BY-SA" "clearline"]
 	Polygon("clearpoly")
 	(
 		[69.8609mm 43.6349mm] [69.7603mm 1715.20mil] [69.7258mm 43.4530mm] [69.7395mm 43.3730mm] [69.7893mm 1705.10mil] 
