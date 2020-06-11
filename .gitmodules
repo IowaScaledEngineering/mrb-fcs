@@ -1,7 +1,7 @@
 [submodule "src/mrbus"]
-	path = src/mrbus
+	path = src/mrb-fcs/mrbus
 	url = https://github.com/IowaScaledEngineering/mrbus.git
 	ignore = dirty
 [submodule "src/avr-i2c"]
-	path = src/avr-i2c
+	path = src/mrb-fcs/avr-i2c
 	url = https://github.com/IowaScaledEngineering/avr-i2c.git
