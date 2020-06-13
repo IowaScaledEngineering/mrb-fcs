@@ -1313,7 +1313,7 @@ Element["" "SM04B-SRSS" "J4" "unknown" 2245.00mil 200.00mil -4.0560mm -10.00mil 
 
 	)
 
-Element["" "TC2030" "J5" "unknown" 2020.00mil 1645.00mil -300.00mil -130.00mil 0 100 ""]
+Element["" "TC2030" "J5" "unknown" 2020.00mil 1645.00mil -250.00mil -240.00mil 0 100 ""]
 (
 	Pin[0.0000 0.0000 97.50mil 20.00mil 103.50mil 93.50mil "" "" "hole"]
 	Pin[-125.00mil 0.0000 97.50mil 20.00mil 103.50mil 93.50mil "" "" "hole"]
@@ -1494,7 +1494,7 @@ Element["" "RPACK4-1206" "R2" "10k" 2570.00mil 1615.00mil -30.00mil -140.00mil 0
 
 	)
 
-Element["" "0805" "C7" "1uF" 1685.00mil 1625.00mil -105.00mil -30.43mil 0 100 ""]
+Element["" "0805" "C7" "1uF" 1685.00mil 1625.00mil -25.00mil -130.43mil 0 100 ""]
 (
 	Pad[-3.93mil -35.43mil 3.93mil -35.43mil 51.18mil 20.00mil 57.18mil "1" "1" "square"]
 	Pad[-3.93mil 35.43mil 3.93mil 35.43mil 51.18mil 0.0000 57.18mil "2" "2" "square"]
