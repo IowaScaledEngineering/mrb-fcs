@@ -9,7 +9,7 @@ Grid[500.000000 0.0000 0.0000 0]
 PolyArea[200000000.000000]
 Thermal[0.500000]
 DRC[8.00mil 5.00mil 8.00mil 8.00mil 12.00mil 6.00mil]
-Flags("showdrc,rubberband,nameonpcb,clearnew,snappin")
+Flags("showdrc,rubberband,nameonpcb,clearnew")
 Groups("1,c:2,s:3")
 Styles["Signal,10.00mil,24.00mil,12.00mil,10.00mil:Power,25.00mil,60.00mil,35.00mil,10.00mil:Fat,40.00mil,60.00mil,35.00mil,10.00mil:Skinny,6.00mil,24.02mil,11.81mil,6.00mil"]
 
@@ -958,6 +958,14 @@ Via[730.00mil 815.00mil 40.00mil 20.00mil 0.0000 20.00mil "" "thermal(0S,1S)"]
 Via[780.00mil 815.00mil 40.00mil 20.00mil 0.0000 20.00mil "" "thermal(0S,1S)"]
 Via[780.00mil 770.00mil 40.00mil 20.00mil 0.0000 20.00mil "" "thermal(0S,1S)"]
 Via[730.00mil 770.00mil 40.00mil 20.00mil 0.0000 20.00mil "" "thermal(0S,1S)"]
+Via[605.00mil 330.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[605.00mil 360.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[575.00mil 330.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[575.00mil 360.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[665.00mil 330.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[665.00mil 360.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[695.00mil 330.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
+Via[695.00mil 360.00mil 24.00mil 20.00mil 0.0000 12.00mil "" "thermal(0S,1S)"]
 
 Element["hidename" "STANDOFF_HEX_n4" "H4" "unknown" 170.00mil 1580.00mil 130.00mil 95.00mil 0 100 ""]
 (
@@ -1711,6 +1719,15 @@ Element["" "0805" "C3" "0.1uF" 590.50mil 1144.50mil -27.50mil 34.50mil 0 100 ""]
 (
 	Pad[35.43mil -3.93mil 35.43mil 3.93mil 51.18mil 20.00mil 57.18mil "1" "1" "square"]
 	Pad[-35.43mil -3.93mil -35.43mil 3.93mil 51.18mil 20.00mil 57.18mil "2" "2" "square"]
+	ElementLine [-3.93mil 27.55mil 3.93mil 27.55mil 10.00mil]
+	ElementLine [-3.93mil -27.55mil 3.93mil -27.55mil 10.00mil]
+
+	)
+
+Element["" "0805" "C2A" "22uF" 635.00mil 280.00mil -46.93mil -96.50mil 0 100 ""]
+(
+	Pad[35.43mil -3.93mil 35.43mil 3.93mil 51.18mil 0.0000 57.18mil "1" "1" "square"]
+	Pad[-35.43mil -3.93mil -35.43mil 3.93mil 51.18mil 0.0000 57.18mil "2" "2" "square"]
 	ElementLine [-3.93mil 27.55mil 3.93mil 27.55mil 10.00mil]
 	ElementLine [-3.93mil -27.55mil 3.93mil -27.55mil 10.00mil]
 
@@ -2611,6 +2628,14 @@ Layer(1 "component")
 	(
 		[815.00mil 845.00mil] [715.00mil 845.00mil] [715.00mil 560.00mil] [815.00mil 560.00mil] 
 	)
+	Polygon("clearpoly")
+	(
+		[625.00mil 250.00mil] [555.00mil 250.00mil] [555.00mil 380.00mil] [625.00mil 380.00mil] 
+	)
+	Polygon("clearpoly")
+	(
+		[645.00mil 250.00mil] [715.00mil 250.00mil] [715.00mil 380.00mil] [645.00mil 380.00mil] 
+	)
 )
 Layer(2 "solder")
 (
@@ -2803,10 +2828,6 @@ Layer(2 "solder")
 	)
 	Polygon("clearpoly")
 	(
-		[360.00mil 20.00mil] [15.7880mm 20.00mil] [15.7880mm 705.00mil] [360.00mil 705.00mil] 
-	)
-	Polygon("clearpoly")
-	(
 		[815.00mil 1220.00mil] [320.00mil 1220.00mil] [320.00mil 570.00mil] [815.00mil 570.00mil] 
 	)
 	Polygon("clearpoly")
@@ -2833,6 +2854,10 @@ Layer(2 "solder")
 	(
 		[870.00mil 20.00mil] [1445.00mil 20.00mil] [1445.00mil 560.00mil] [645.00mil 560.00mil] [645.00mil 190.00mil] 
 		[870.00mil 190.00mil] 
+	)
+	Polygon("clearpoly")
+	(
+		[625.00mil 20.00mil] [345.00mil 20.00mil] [345.00mil 650.00mil] [625.00mil 650.00mil] 
 	)
 )
 Layer(3 "outline")
@@ -3033,6 +3058,7 @@ NetList()
 	)
 	Net("+5V" "(unknown)")
 	(
+		Connect("C2A-1")
 		Connect("C2-1")
 		Connect("C11-1")
 		Connect("C12-1")
@@ -3077,6 +3103,7 @@ NetList()
 	Net("GND" "(unknown)")
 	(
 		Connect("C1-2")
+		Connect("C2A-2")
 		Connect("C2-2")
 		Connect("C4-2")
 		Connect("C5-2")
