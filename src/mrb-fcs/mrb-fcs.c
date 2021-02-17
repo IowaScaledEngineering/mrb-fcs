@@ -57,7 +57,7 @@ uint8_t output_status=0;
 
 uint16_t scaleFactor = 10;
 uint8_t flags = 0;
-uint8_t status = 0;
+volatile uint8_t status = 0;
 
 typedef struct
 {
@@ -189,14 +189,14 @@ uint8_t displayDecimals = 0;
 // and the call to this function in the main function
 
 
-uint8_t ticks=0;
-uint8_t decisecs=0;
+volatile uint8_t ticks=0;
+volatile uint8_t decisecs=0;
 
 volatile uint16_t fastDecisecs = 0;
 volatile uint8_t scaleTenthsAccum = 0;
 uint16_t pktPeriod = 0;
 uint8_t maxDeadReckoningTime = 50;
-uint8_t deadReckoningTime = 0;
+volatile uint8_t deadReckoningTime = 0;
 uint8_t timeSourceAddress = 0xFF;
 
 void initialize100HzTimer(void)
