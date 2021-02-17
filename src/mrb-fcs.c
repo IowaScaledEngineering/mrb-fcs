@@ -158,8 +158,12 @@ const uint8_t SEGMENTS[] =
 #define LCD_CHAR_O     24
 #define LCD_CHAR_L     21
 #define LCD_CHAR_D     13
+#define LCD_CHAR_U     30
+#define LCD_CHAR_W     32
 #define LED_CHAR_BLANK 36
 #define LED_CHAR_DASH  37
+
+
 
 #define DECIMAL_COLON        0x01
 #define DECIMAL_PM_INDICATOR 0x08
@@ -510,6 +514,61 @@ void tlc59116Reset()
 	PORTC |= _BV(PC3);
 }
 
+void testSegments(TLC59116Context* u3, TLC59116Context* u4)
+{
+	const uint8_t dispChar[] = {
+		0b00000000,  // 0 - Off
+		0b00000001,  // 1
+		0b00000011,  // 2
+		0b00000111,  // 3
+		0b00001111,  // 4
+		0b00011111,  // 5
+		0b00111111,  // 6
+		0b01111111,  // 7
+		0b11111111,  // 8
+		0b01111111,  // 9
+		0b01111111,  // 9
+		0b11111111,  // 8
+		0b01111111,  // 9
+		0b01111111,  // 9
+		0b11111111,  // 8
+		0b00000000,  // 9 - Off
+	};
+
+	// Run through segments
+	for(uint8_t i=0; i<sizeof(dispChar)/sizeof(dispChar[0]); i++)
+	{
+		// Convert display characters to TLC59116 output lines
+		tlc59116FromCharacters(u3, dispChar[i], dispChar[i]);
+		tlc59116FromCharacters(u4, dispChar[i], dispChar[i]);
+		// Send I2C updates to parts
+		tlc59116Update(u3);
+		tlc59116Update(u4);
+		wdt_reset();
+		_delay_ms(120);
+	}
+}
+
+void displayVersion(TLC59116Context* u3, TLC59116Context* u4)
+{
+	// Convert display characters to TLC59116 output lines
+#ifdef MRBEE
+	tlc59116FromCharacters(u3, SEGMENTS[LCD_CHAR_W], SEGMENTS[SW_MAJOR_REV] | SEGMENT_DP);
+#else
+	tlc59116FromCharacters(u3, SEGMENTS[LCD_CHAR_V], SEGMENTS[SW_MAJOR_REV] | SEGMENT_DP);
+#endif
+
+	tlc59116FromCharacters(u4, SEGMENTS[SW_MINOR_REV], SEGMENTS[SW_DELTA_REV]);
+	// Send I2C updates to parts
+	tlc59116Update(u3);
+	tlc59116Update(u4);
+	for(uint8_t i=0; i<20; i++)
+	{
+		wdt_reset();
+		_delay_ms(100);
+	}
+}
+
 
 int main(void)
 {
@@ -542,6 +601,9 @@ int main(void)
 
 	tlc59116Initialize(&u3, I2C_ADDR_TLC59116_U3);
 	tlc59116Initialize(&u4, I2C_ADDR_TLC59116_U4);
+
+	testSegments(&u3, &u4);
+	displayVersion(&u3, &u4);
 
 	while (1)
 	{
